@@ -31,6 +31,8 @@ public sealed record RouteSuggestionDto(
 	PlanSummaryDto? Suggested,
 	IReadOnlyList<SuggestedChangeDto> Changes,
 	IReadOnlyList<string> CantFit,
-	string? Fingerprint);
+	string? Fingerprint,
+	// Each truck's whole day under the suggested plan, in order, which reads easier than a list of edits.
+	IReadOnlyList<TruckPlanDto> SuggestedTrucks);
 
 public sealed record ApplySuggestionRequest(string Fingerprint);

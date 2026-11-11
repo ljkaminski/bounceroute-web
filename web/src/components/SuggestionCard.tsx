@@ -55,26 +55,27 @@ export function SuggestionCard({ date }: { date: string }) {
         </ul>
       </div>
 
-      <div>
-        <h3 className="label">What changes</h3>
-        <ul className="space-y-1 text-sm">
-          {plan.changes.map((change) => (
-            <li key={change.jobId} className="rounded-lg bg-slate-50 px-3 py-2">
-              <span className="font-semibold">{change.customerName}</span> {change.type === 'Setup' ? 'setup' : 'pickup'}:{' '}
-              {change.fromTruck !== change.toTruck && (
-                <>
-                  move to <b>{change.toTruck}</b>,{' '}
-                </>
-              )}
-              arrive <b>{formatTime(change.toTime)}</b>
-              <span className="text-slate-500">
-                {' '}
-                (was {formatTime(change.fromTime)}
-                {change.fromTruck !== change.toTruck && ` on ${change.fromTruck}`})
-              </span>
-            </li>
-          ))}
-        </ul>
+      <p className="text-sm text-slate-700">{changeSummary(plan)}</p>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {plan.suggestedTrucks.map((truck) => (
+          <div key={truck.truck} className="rounded-xl bg-slate-50 p-3">
+            <h3 className="font-bold">{truck.truck}</h3>
+            <p className="text-xs text-slate-500">
+              Leave {truck.leaveShopAt ? formatTime(truck.leaveShopAt) : '—'} · back {truck.backAtShopAt ? formatTime(truck.backAtShopAt) : formatTime(truck.doneAt)}
+            </p>
+            <ol className="mt-2 space-y-1 text-sm">
+              {truck.stops.map((stop) => (
+                <li key={stop.jobId} className="flex gap-2">
+                  <span className="w-20 shrink-0 font-semibold whitespace-nowrap">{formatTime(stop.startAt)}</span>
+                  <span>
+                    {stop.customerName} <span className="text-slate-500">{stop.type === 'Setup' ? 'setup' : 'pickup'}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ))}
       </div>
 
       <CantFit plan={plan} />
@@ -117,4 +118,15 @@ function benefits(plan: RouteSuggestion): string[] {
   }
   if (lines.length === 0) lines.push('Puts every stop on a truck that is going out')
   return lines
+}
+
+// One sentence about what the plan moves, e.g. "Moves 5 parties to Truck 2 and adjusts arrival times."
+function changeSummary(plan: RouteSuggestion): string {
+  const moved = plan.changes.filter((change) => change.fromTruck !== change.toTruck)
+  const parties = new Map<string, Set<string>>()
+  for (const change of moved) parties.set(change.toTruck, (parties.get(change.toTruck) ?? new Set()).add(change.customerName))
+  const moves = [...parties].map(([truck, names]) => `${names.size} ${names.size === 1 ? 'party' : 'parties'} to ${truck}`)
+  if (moves.length === 0) return 'Keeps every truck the same and adjusts arrival times:'
+  const retimed = plan.changes.length > moved.length
+  return `Moves ${moves.join(' and ')}${retimed ? ' and adjusts arrival times' : ''}. The new day for each truck:`
 }

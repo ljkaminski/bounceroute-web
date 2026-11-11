@@ -2542,7 +2542,8 @@
           "suggested",
           "changes",
           "cantFit",
-          "fingerprint"
+          "fingerprint",
+          "suggestedTrucks"
         ],
         "type": "object",
         "properties": {
@@ -2596,6 +2597,12 @@
               "null",
               "string"
             ]
+          },
+          "suggestedTrucks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TruckPlanDto"
+            }
           }
         }
       },

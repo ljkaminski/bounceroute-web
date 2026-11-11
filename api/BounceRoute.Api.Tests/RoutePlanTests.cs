@@ -170,6 +170,26 @@ public sealed class PartyTimeTests : IAsyncLifetime
 	}
 
 	[Fact]
+	public async Task Pickup_is_late_only_when_more_than_two_hours_after_the_party()
+	{
+		var at = (string time) => DateTimeOffset.Parse($"2037-03-09T{time}:00-04:00");
+		var setup = new SaveJobScheduleRequest(at("10:00"), "Truck 1", []);
+		await owner.PostAsJsonAsync("/api/bookings", new SaveBookingRequest(
+			"Prompt", null, "1 Party St", "Monroe, NC 28110", Surface.Grass, null, setup, setup with { ScheduledAt = at("17:30") },
+			[new("Tables", false)], PartyStartsAt: at("12:00"), PartyEndsAt: at("16:00")), ApiFactory.Json);
+		await owner.PostAsJsonAsync("/api/bookings", new SaveBookingRequest(
+			"Slow", null, "2 Party St", "Monroe, NC 28110", Surface.Grass, null, setup with { Truck = "Truck 2" },
+			setup with { Truck = "Truck 2", ScheduledAt = at("18:30") },
+			[new("Tables", false)], PartyStartsAt: at("12:00"), PartyEndsAt: at("16:00")), ApiFactory.Json);
+
+		var plan = await (await owner.GetAsync("/api/route/plan?date=2037-03-09")).ReadAsync<RoutePlanDto>();
+		var pickups = plan.Trucks.SelectMany(truck => truck.Stops).Where(stop => stop.Type == JobType.Pickup).ToDictionary(stop => stop.CustomerName);
+
+		Assert.Equal(0, pickups["Prompt"].MinutesLate);  // 1.5 hours after the party
+		Assert.Equal(30, pickups["Slow"].MinutesLate);   // 2.5 hours after
+	}
+
+		[Fact]
 	public async Task Party_has_to_end_after_it_starts()
 	{
 		var at = (string time) => DateTimeOffset.Parse($"2037-03-08T{time}:00-05:00");

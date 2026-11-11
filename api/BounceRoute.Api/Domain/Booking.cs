@@ -26,6 +26,9 @@ public sealed class Booking
 
 	public DateTimeOffset? PartyEndsAt { get; set; }
 
+	// Same-day pickups should happen within this long after the party ends, so units aren't left sitting.
+	public static readonly TimeSpan PickupWithin = TimeSpan.FromHours(2);
+
 	// Map position, looked up from the address the first time a route plan needs it.
 	// GeocodedAddress is the address it was looked up for, so an edited address gets looked up again.
 	public double? Latitude { get; set; }

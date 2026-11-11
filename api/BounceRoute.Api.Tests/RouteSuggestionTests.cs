@@ -96,10 +96,11 @@ public sealed class RouteSuggestionTests : IAsyncLifetime
 		var setup = stops.Single(stop => stop.Id == booking.Setup.Id);
 		Assert.Equal(StopKind.Setup, setup.Kind);
 		Assert.Equal(2, setup.Pieces);
-		// A 30 minute combo has to start by 11:30 to be done for a noon party.
-		Assert.Equal(At("11:30"), setup.LatestStart);
+		// A 30 minute combo has to start by 11:20 to be done 10 minutes before a noon party.
+		Assert.Equal(At("11:20"), setup.LatestStart);
+		// Pickup after the 4 PM end, and within two hours of it.
 		var pickup = stops.Single(stop => stop.Id == booking.Pickup.Id);
-		Assert.Equal(At("16:00"), pickup.EarliestStart);
+		Assert.Equal((At("16:00"), At("18:00")), (pickup.EarliestStart, pickup.LatestStart));
 	}
 
 	[Fact]

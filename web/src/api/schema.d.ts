@@ -1987,6 +1987,7 @@ export interface components {
             changes: components["schemas"]["SuggestedChangeDto"][];
             cantFit: string[];
             fingerprint: null | string;
+            suggestedTrucks: components["schemas"]["TruckPlanDto"][];
         };
         SaveBookingItemRequest: {
             name: null | string;

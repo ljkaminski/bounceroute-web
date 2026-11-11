@@ -16,6 +16,10 @@ public static class RouteSuggestionEndpoints
 	// Trucks can be out between these hours.
 	private static readonly TimeSpan DayStarts = TimeSpan.FromHours(6), DayEnds = TimeSpan.FromHours(22);
 
+	// Plans aim to have setups done this long before the party, as a cushion for parking and small surprises.
+	// It also soaks up the optimizer measuring drives to the second while route plans round each drive up a minute.
+	private const int SetupCushionMinutes = 10;
+
 	public static void MapRouteSuggestionEndpoints(this IEndpointRouteBuilder app)
 	{
 		var suggestion = app.MapGroup("/api/route/suggestion").WithTags("Route").RequireAuthorization(Policies.Office);
@@ -70,7 +74,7 @@ public static class RouteSuggestionEndpoints
 	private static async Task<Proposal> ProposeAsync(
 		DateOnly date, BounceRouteDbContext db, BusinessClock clock, IMaps maps, IRouteOptimizer optimizer, IMemoryCache cache, CancellationToken cancellationToken)
 	{
-		Proposal NotAvailable(string reason) => new(new RouteSuggestionDto(date, SuggestionStatus.NotAvailable, reason, null, null, [], [], null), []);
+		Proposal NotAvailable(string reason) => new(new RouteSuggestionDto(date, SuggestionStatus.NotAvailable, reason, null, null, [], [], null, []), []);
 
 		var (start, end) = clock.Range(date, date);
 		var jobs = await db.Jobs
@@ -115,11 +119,10 @@ public static class RouteSuggestionEndpoints
 			return NotAvailable("The route planner didn't answer. Try again in a minute.");
 
 		var truckNames = trucksOut.ToDictionary(truck => truck.Id, truck => truck.Name);
-		var latestStart = stops.ToDictionary(stop => stop.Id, stop => stop.LatestStart);
 		var moves = new Dictionary<int, (string Truck, DateTimeOffset At)>();
 		foreach (var route in result.Routes)
 			foreach (var step in route.Steps)
-				moves[step.StopId] = (truckNames[route.TruckId], Tidy(step.StartAt, latestStart[step.StopId]));
+				moves[step.StopId] = (truckNames[route.TruckId], Tidy(step.StartAt));
 
 		// Plan both versions the same way so the comparison is fair.
 		var proposed = jobs.Select(job => moves.TryGetValue(job.Id, out var move) ? CopyWith(job, move.Truck, move.At) : job).ToList();
@@ -146,7 +149,7 @@ public static class RouteSuggestionEndpoints
 			|| (fixesTrucks && suggested.LateStops <= current.LateStops));
 
 		var dto = new RouteSuggestionDto(date, better ? SuggestionStatus.Better : SuggestionStatus.AlreadyBest, null, current, suggested,
-			better ? changes : [], cantFit, fingerprint);
+			better ? changes : [], cantFit, fingerprint, better ? proposedPlan : []);
 		var proposal = new Proposal(dto, better ? moves.Where(move => changes.Any(change => change.JobId == move.Key)).ToDictionary() : []);
 		cache.Set(CacheKey(fingerprint), proposal, TimeSpan.FromMinutes(30));
 		return proposal;
@@ -161,25 +164,29 @@ public static class RouteSuggestionEndpoints
 
 		if (job.Type == JobType.Setup)
 		{
-			// Done before the party starts; without a party time, no later than the time already promised.
-			var latest = booking.PartyStartsAt is { } party ? party.AddMinutes(-minutes) : job.ScheduledAt;
+			// Done (with a cushion) before the party starts; without a party time, no later than the time already promised.
+			var latest = booking.PartyStartsAt is { } party ? party.AddMinutes(-minutes - SetupCushionMinutes) : job.ScheduledAt;
 			return new OptimizerStop(job.Id, location, StopKind.Setup, minutes, pieces, dayStart, Clamp(latest, dayStart, dayEnd));
 		}
 
-		var earliest = booking.PartyEndsAt ?? job.ScheduledAt;
-		return new OptimizerStop(job.Id, location, StopKind.Pickup, minutes, pieces, Clamp(earliest, dayStart, dayEnd), dayEnd);
+		// After the party ends and within two hours of it. A pickup the next day (party ended the day before) can be any time.
+		if (booking.PartyEndsAt is { } ended && ended >= dayStart)
+		{
+			var opens = Clamp(ended, dayStart, dayEnd);
+			return new OptimizerStop(job.Id, location, StopKind.Pickup, minutes, pieces, opens, Clamp(ended + Booking.PickupWithin, opens, dayEnd));
+		}
+		var notBefore = booking.PartyEndsAt is null ? Clamp(job.ScheduledAt, dayStart, dayEnd) : dayStart;
+		return new OptimizerStop(job.Id, location, StopKind.Pickup, minutes, pieces, notBefore, dayEnd);
 	}
 
 	private static DateTimeOffset Clamp(DateTimeOffset value, DateTimeOffset min, DateTimeOffset max) => value < min ? min : value > max ? max : value;
 
-	// Crews read times like 9:45 more easily than 9:43, so round up to 5 minutes when that still meets the deadline.
-	private static DateTimeOffset Tidy(DateTimeOffset at, DateTimeOffset latest)
+	// Round up to the whole minute. Rounding further (to :05s) looked tidier but pushed every later stop back
+	// a few minutes until some ran late.
+	private static DateTimeOffset Tidy(DateTimeOffset at)
 	{
 		var minute = new DateTimeOffset(at.Year, at.Month, at.Day, at.Hour, at.Minute, 0, at.Offset);
-		if (minute < at)
-			minute = minute.AddMinutes(1);
-		var five = minute.AddMinutes((5 - minute.Minute % 5) % 5);
-		return five <= latest ? five : minute;
+		return minute < at ? minute.AddMinutes(1) : minute;
 	}
 
 	private static Job CopyWith(Job job, string truck, DateTimeOffset at) => new()

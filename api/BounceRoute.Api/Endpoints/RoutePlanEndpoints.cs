@@ -101,13 +101,17 @@ public static class RoutePlanEndpoints
 			planned);
 	}
 
-	// With a party time, a setup is late if it won't be finished before the party starts; that's what the customer
-	// cares about. Without one (older bookings), it's late if the crew starts after the scheduled time.
+	// With party times, lateness is what the customer notices: a setup not finished before the party starts, or a
+	// pickup starting more than two hours after it ends. Without them (older bookings), it's late if the crew starts
+	// after the scheduled time.
 	internal static int MinutesLate(Job job, DateTimeOffset startAt, DateTimeOffset finishAt)
 	{
-		var late = job is { Type: JobType.Setup, Booking.PartyStartsAt: DateTimeOffset party }
-			? finishAt - party
-			: startAt - job.ScheduledAt;
+		var late = job switch
+		{
+			{ Type: JobType.Setup, Booking.PartyStartsAt: DateTimeOffset party } => finishAt - party,
+			{ Type: JobType.Pickup, Booking.PartyEndsAt: DateTimeOffset ended } => startAt - (ended + Booking.PickupWithin),
+			_ => startAt - job.ScheduledAt
+		};
 		return (int)Math.Max(0, Math.Round(late.TotalMinutes));
 	}
 
