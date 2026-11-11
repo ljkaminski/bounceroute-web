@@ -732,6 +732,67 @@
         }
       }
     },
+    "/api/inventory/availability": {
+      "get": {
+        "tags": [
+          "Inventory"
+        ],
+        "summary": "How many of each active item are free between setupAt and pickupAt. Pass excludeBookingId when editing a booking.",
+        "parameters": [
+          {
+            "name": "setupAt",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "pickupAt",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "excludeBookingId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InventoryAvailabilityDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/inventory/{id}": {
       "put": {
         "tags": [
@@ -1310,6 +1371,33 @@
                 "type": "string"
               }
             }
+          }
+        }
+      },
+      "InventoryAvailabilityDto": {
+        "required": [
+          "inventoryItemId",
+          "quantity",
+          "booked",
+          "available"
+        ],
+        "type": "object",
+        "properties": {
+          "inventoryItemId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "booked": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "available": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

@@ -59,8 +59,11 @@ public static class BookingEndpoints
 
 	private static async Task<Results<CreatedAtRoute<BookingDto>, ValidationProblem>> CreateBooking(SaveBookingRequest request, BounceRouteDbContext db, TimeProvider time)
 	{
+		await using var transaction = await db.Database.BeginTransactionAsync();
+		await Availability.LockBookingsAsync(db);
+
 		var inventory = await LoadInventoryAsync(request, db);
-		if (await ValidateAsync(request, db, inventory, alreadyOnBooking: []) is { } problem)
+		if (await ValidateAsync(request, db, inventory, bookingId: null, alreadyOnBooking: []) is { } problem)
 			return problem;
 
 		var now = time.GetUtcNow();
@@ -72,6 +75,7 @@ public static class BookingEndpoints
 		Apply(request, booking, inventory, now);
 		db.Bookings.Add(booking);
 		await db.SaveChangesAsync();
+		await transaction.CommitAsync();
 
 		// Reload so the database-assigned job number comes back.
 		var saved = (await LoadAsync(db, booking.Id))!;
@@ -80,17 +84,21 @@ public static class BookingEndpoints
 
 	private static async Task<Results<Ok<BookingDto>, NotFound, ValidationProblem>> UpdateBooking(int id, SaveBookingRequest request, BounceRouteDbContext db, TimeProvider time)
 	{
+		await using var transaction = await db.Database.BeginTransactionAsync();
+		await Availability.LockBookingsAsync(db);
+
 		var booking = await LoadAsync(db, id, tracked: true);
 		if (booking is null)
 			return TypedResults.NotFound();
 
 		var inventory = await LoadInventoryAsync(request, db);
 		var alreadyOnBooking = booking.Items.Where(item => item.InventoryItemId is not null).Select(item => item.InventoryItemId!.Value).ToHashSet();
-		if (await ValidateAsync(request, db, inventory, alreadyOnBooking) is { } problem)
+		if (await ValidateAsync(request, db, inventory, booking.Id, alreadyOnBooking) is { } problem)
 			return problem;
 
 		Apply(request, booking, inventory, time.GetUtcNow());
 		await db.SaveChangesAsync();
+		await transaction.CommitAsync();
 		return TypedResults.Ok(ToDto(booking));
 	}
 
@@ -111,7 +119,7 @@ public static class BookingEndpoints
 	}
 
 	private static async Task<ValidationProblem?> ValidateAsync(
-		SaveBookingRequest request, BounceRouteDbContext db, Dictionary<int, InventoryItem> inventory, HashSet<int> alreadyOnBooking)
+		SaveBookingRequest request, BounceRouteDbContext db, Dictionary<int, InventoryItem> inventory, int? bookingId, HashSet<int> alreadyOnBooking)
 	{
 		var errors = new Dictionary<string, string[]>();
 		var itemErrors = new List<string>();
@@ -136,6 +144,22 @@ public static class BookingEndpoints
 				itemErrors.Add($"{owned.Name} is dry use only.");
 			else if (owned.WaterUse == WaterUse.WetOnly && item.IsWet == false)
 				itemErrors.Add($"{owned.Name} is water use only.");
+		}
+
+		// Everything requested, plus what other overlapping bookings hold, must fit in what the company owns.
+		if (itemErrors.Count == 0 && request.Pickup.ScheduledAt > request.Setup.ScheduledAt)
+		{
+			var booked = await Availability.BookedCountsAsync(
+				db, request.Setup.ScheduledAt.ToUniversalTime(), request.Pickup.ScheduledAt.ToUniversalTime(), bookingId);
+			foreach (var wanted in request.Items.Where(item => item.InventoryItemId is not null).GroupBy(item => item.InventoryItemId!.Value))
+			{
+				var owned = inventory[wanted.Key];
+				var free = owned.Quantity - booked.GetValueOrDefault(owned.Id);
+				if (wanted.Count() > free)
+					itemErrors.Add(free <= 0
+						? $"{owned.Name} is already booked for those dates."
+						: $"Only {free} of {owned.Quantity} {owned.Name} free for those dates.");
+			}
 		}
 
 		if (itemErrors.Count > 0)

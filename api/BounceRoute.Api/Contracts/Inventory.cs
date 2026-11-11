@@ -31,3 +31,5 @@ public sealed record SaveInventoryItemRequest(
 	[property: Range(0, 100000)] decimal? DailyPrice,
 	[property: MaxLength(500)] string? Notes,
 	bool IsActive = true);
+
+public sealed record InventoryAvailabilityDto(int InventoryItemId, int Quantity, int Booked, int Available);

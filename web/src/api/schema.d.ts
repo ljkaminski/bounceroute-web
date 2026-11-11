@@ -812,6 +812,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/inventory/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How many of each active item are free between setupAt and pickupAt. Pass excludeBookingId when editing a booking. */
+        get: {
+            parameters: {
+                query: {
+                    setupAt: string;
+                    pickupAt: string;
+                    excludeBookingId?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InventoryAvailabilityDto"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/inventory/{id}": {
         parameters: {
             query?: never;
@@ -1157,6 +1206,16 @@ export interface components {
             errors?: {
                 [key: string]: string[];
             };
+        };
+        InventoryAvailabilityDto: {
+            /** Format: int32 */
+            inventoryItemId: number;
+            /** Format: int32 */
+            quantity: number;
+            /** Format: int32 */
+            booked: number;
+            /** Format: int32 */
+            available: number;
         };
         /** @enum {unknown} */
         InventoryCategory: "BounceHouse" | "Combo" | "WaterSlide" | "ObstacleCourse" | "SlipNSlide" | "Game" | "Equipment" | "Other";

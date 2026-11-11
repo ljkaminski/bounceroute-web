@@ -13,6 +13,8 @@ public static class InventoryEndpoints
 		var inventory = app.MapGroup("/api/inventory").WithTags("Inventory").RequireAuthorization(Policies.Office);
 
 		inventory.MapGet("/", ListInventory);
+		inventory.MapGet("/availability", GetAvailability)
+			.WithSummary("How many of each active item are free between setupAt and pickupAt. Pass excludeBookingId when editing a booking.");
 		inventory.MapPost("/", CreateItem);
 		inventory.MapPut("/{id:int}", UpdateItem)
 			.WithSummary("Updates an item. Retire items with isActive=false instead of deleting so past bookings keep their history.");
@@ -23,6 +25,24 @@ public static class InventoryEndpoints
 		.OrderBy(item => item.Category).ThenBy(item => item.Name)
 		.Select(item => ToDto(item))
 		.ToListAsync();
+
+	private static async Task<Results<Ok<List<InventoryAvailabilityDto>>, ValidationProblem>> GetAvailability(
+		DateTimeOffset setupAt, DateTimeOffset pickupAt, int? excludeBookingId, BounceRouteDbContext db)
+	{
+		if (pickupAt <= setupAt)
+			return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["PickupAt"] = ["Pickup must be after setup."] });
+
+		var booked = await Availability.BookedCountsAsync(db, setupAt.ToUniversalTime(), pickupAt.ToUniversalTime(), excludeBookingId);
+		var items = await db.InventoryItems.Where(item => item.IsActive).Select(item => new { item.Id, item.Quantity }).ToListAsync();
+
+		return TypedResults.Ok(items
+			.Select(item =>
+			{
+				var held = booked.GetValueOrDefault(item.Id);
+				return new InventoryAvailabilityDto(item.Id, item.Quantity, held, Math.Max(0, item.Quantity - held));
+			})
+			.ToList());
+	}
 
 	private static async Task<Results<Created<InventoryItemDto>, ValidationProblem>> CreateItem(
 		SaveInventoryItemRequest request, BounceRouteDbContext db)
