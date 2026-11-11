@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using BounceRoute.Api.Data;
 using BounceRoute.Api.Domain;
 using BounceRoute.Api.Endpoints;
@@ -49,6 +50,19 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 builder.Services.AddAuthorization();
 
+// Slows down password guessing from one address; account lockout covers guessing one account.
+builder.Services.AddRateLimiter(options =>
+{
+	options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+	options.AddPolicy(AuthEndpoints.LoginRateLimit, context => RateLimitPartition.GetFixedWindowLimiter(
+		context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+		_ => new FixedWindowRateLimiterOptions
+		{
+			PermitLimit = builder.Configuration.GetValue("Auth:LoginAttemptsPerMinute", 10),
+			Window = TimeSpan.FromMinutes(1)
+		}));
+});
+
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(services => new BusinessClock(
 	TimeZoneInfo.FindSystemTimeZoneById(builder.Configuration["Business:TimeZone"] ?? "America/New_York"),
@@ -72,6 +86,7 @@ app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapOpenApi();
 app.MapHealthChecks("/health");

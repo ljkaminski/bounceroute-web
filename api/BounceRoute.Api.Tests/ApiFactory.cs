@@ -14,7 +14,7 @@ namespace BounceRoute.Api.Tests;
 
 // Runs the real API against a throwaway Postgres in Docker. Shared by every test in a class;
 // each test schedules its jobs on its own dates so they do not see each other's data.
-public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
+public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
 	public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
 	{
@@ -54,6 +54,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 		builder.UseEnvironment("Testing");
 		builder.UseSetting("ConnectionStrings:BounceRoute", database.GetConnectionString());
 		builder.UseSetting("Business:TimeZone", "America/New_York");
+		builder.UseSetting("Auth:LoginAttemptsPerMinute", "1000");
 	}
 }
 

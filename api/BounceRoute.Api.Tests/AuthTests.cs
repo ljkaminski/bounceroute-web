@@ -49,3 +49,32 @@ public sealed class AuthTests(ApiFactory factory) : IClassFixture<ApiFactory>
 		Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/auth/me")).StatusCode);
 	}
 }
+
+public sealed class LoginRateLimitTests(LoginRateLimitTests.LimitedApiFactory factory)
+	: IClassFixture<LoginRateLimitTests.LimitedApiFactory>
+{
+	[Fact]
+	public async Task Too_many_login_attempts_from_one_address_get_429()
+	{
+		var client = factory.CreateClient();
+
+		var statuses = new List<HttpStatusCode>();
+		for (var attempt = 0; attempt < 4; attempt++)
+		{
+			var response = await client.PostAsJsonAsync("/api/auth/login",
+				new LoginRequest("nobody@example.com", "not-the-password"), ApiFactory.Json);
+			statuses.Add(response.StatusCode);
+		}
+
+		Assert.Equal([HttpStatusCode.Unauthorized, HttpStatusCode.Unauthorized, HttpStatusCode.Unauthorized, HttpStatusCode.TooManyRequests], statuses);
+	}
+
+	public sealed class LimitedApiFactory : ApiFactory
+	{
+		protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
+		{
+			base.ConfigureWebHost(builder);
+			builder.UseSetting("Auth:LoginAttemptsPerMinute", "3");
+		}
+	}
+}

@@ -8,12 +8,15 @@ namespace BounceRoute.Api.Endpoints;
 
 public static class AuthEndpoints
 {
+	public const string LoginRateLimit = "login";
+
 	public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
 	{
 		var auth = app.MapGroup("/api/auth").WithTags("Auth");
 
 		auth.MapPost("/login", Login)
-			.WithSummary("Signs in with email and password and sets the session cookie.");
+			.WithSummary("Signs in with email and password and sets the session cookie.")
+			.RequireRateLimiting(LoginRateLimit);
 
 		auth.MapPost("/logout", Logout).RequireAuthorization();
 
