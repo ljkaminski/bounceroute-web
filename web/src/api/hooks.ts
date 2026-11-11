@@ -21,6 +21,9 @@ export const keys = {
   users: ['users'] as const,
   settings: ['settings'] as const,
   setupTimes: ['setup-times'] as const,
+  trucks: ['trucks'] as const,
+  trucksOut: (date: string) => ['trucks-out', date] as const,
+  suggestion: (date: string) => ['suggestion', date] as const,
   plan: (date: string) => ['plan', date] as const,
   inventory: (includeInactive: boolean) => ['inventory', includeInactive] as const,
   availability: (setupAt: string, pickupAt: string, excludeBookingId?: number) =>
@@ -93,6 +96,29 @@ export const useRoutePlan = (date: string) =>
   useQuery({
     queryKey: keys.plan(date),
     queryFn: () => unwrap(api.GET('/api/route/plan', { params: { query: { date } } })),
+  })
+
+export const useTrucks = (enabled = true) =>
+  useQuery({
+    queryKey: keys.trucks,
+    queryFn: () => unwrap(api.GET('/api/trucks')),
+    enabled,
+  })
+
+export const useTrucksOut = (date: string, enabled = true) =>
+  useQuery({
+    queryKey: keys.trucksOut(date),
+    queryFn: () => unwrap(api.GET('/api/route/trucks', { params: { query: { date } } })),
+    enabled,
+  })
+
+// Worked out by the route optimizer, so it can take a few seconds; cached on the server per set of inputs.
+export const useSuggestion = (date: string, enabled = true) =>
+  useQuery({
+    queryKey: keys.suggestion(date),
+    queryFn: () => unwrap(api.GET('/api/route/suggestion', { params: { query: { date } } })),
+    enabled,
+    staleTime: 60_000,
   })
 
 export const useUsers = () =>
@@ -259,6 +285,34 @@ export function useSaveSetupTimes() {
   const refresh = useRefreshAll()
   return useMutation({
     mutationFn: (body: Schemas['CategorySetupTimeDto'][]) => unwrap(api.PUT('/api/settings/setup-times', { body })),
+    onSuccess: refresh,
+  })
+}
+
+export function useSaveTruck(id: number | undefined) {
+  const refresh = useRefreshAll()
+  return useMutation({
+    mutationFn: (body: Schemas['SaveTruckRequest']) =>
+      id === undefined
+        ? unwrap(api.POST('/api/trucks', { body }))
+        : unwrap(api.PUT('/api/trucks/{id}', { params: { path: { id } }, body })),
+    onSuccess: refresh,
+  })
+}
+
+export function useSaveTrucksOut(date: string) {
+  const refresh = useRefreshAll()
+  return useMutation({
+    mutationFn: (truckIds: number[]) => unwrap(api.PUT('/api/route/trucks', { params: { query: { date } }, body: { truckIds } })),
+    onSuccess: refresh,
+  })
+}
+
+export function useApplySuggestion(date: string) {
+  const refresh = useRefreshAll()
+  return useMutation({
+    mutationFn: (fingerprint: string) =>
+      unwrap(api.POST('/api/route/suggestion/apply', { params: { query: { date } }, body: { fingerprint } })),
     onSuccess: refresh,
   })
 }

@@ -209,6 +209,11 @@ function ItemForm({ item, onDone }: { item?: InventoryItem; onDone: () => void }
         </div>
       </fieldset>
       <label>
+        <span className="label">Truck space (pieces)</span>
+        <input className="field" type="number" min={0} max={10} value={form.truckSpace ?? ''}
+          placeholder={form.category === 'Equipment' ? '0' : '1'} onChange={(e) => set('truckSpace', number(e.target.value))} />
+      </label>
+      <label>
         <span className="label">Setup minutes</span>
         <input className="field" type="number" min={0} max={600} value={form.setupMinutes ?? ''}
           placeholder={typeMinutes === undefined ? 'Type default' : `${typeMinutes} (type default)`}

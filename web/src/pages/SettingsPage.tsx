@@ -3,6 +3,7 @@ import type { Schemas } from '../api/client'
 import { useSaveSettings, useSaveSetupTimes, useSettings, useSetupTimes } from '../api/hooks'
 import { categoryLabels } from '../lib/inventory'
 import { ErrorBox, Loading } from '../components/Feedback'
+import { TrucksSettings } from '../components/TrucksSettings'
 
 export function SettingsPage() {
   const settings = useSettings()
@@ -15,6 +16,7 @@ export function SettingsPage() {
   return (
     <div className="space-y-5">
       <SettingsForm initial={settings.data} />
+      <TrucksSettings />
       <SetupTimesForm initial={times.data} />
     </div>
   )
