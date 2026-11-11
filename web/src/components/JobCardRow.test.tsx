@@ -24,6 +24,8 @@ const job: JobCard = {
   extras: [{ id: 2, name: 'Generator', isUnit: false, isLoaded: false, inventoryItemId: null, isWet: null, photoUrl: null }],
   crew: [{ id: 1, name: 'Jordan Hale', initials: 'JH' }],
   workMinutes: 30,
+  partyStartsAt: null,
+  partyEndsAt: null,
 }
 
 it('shows the stop the way crews read it', () => {

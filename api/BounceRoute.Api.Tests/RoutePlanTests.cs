@@ -134,3 +134,50 @@ public sealed class RoutePlanTests : IAsyncLifetime
 		response.EnsureSuccessStatusCode();
 	}
 }
+
+public sealed class PartyTimeTests : IAsyncLifetime
+{
+	private readonly MapsApiFactory factory = new();
+	private HttpClient owner = null!;
+
+	public async Task InitializeAsync()
+	{
+		await factory.InitializeAsync();
+		owner = await factory.SignedInClientAsync(Roles.Owner);
+		await owner.PutAsJsonAsync("/api/settings", new SaveCompanySettingsRequest("Test", null, null, "1 Shop Rd, Monroe, NC"), ApiFactory.Json);
+	}
+
+	public Task DisposeAsync() => factory.DisposeAsync();
+
+	[Fact]
+	public async Task Setup_is_late_when_it_wont_be_done_before_the_party()
+	{
+		var slide = await (await owner.PostAsJsonAsync("/api/inventory",
+			InventoryTests.Item($"Party {Guid.NewGuid():N}") with { Category = InventoryCategory.WaterSlide, WaterUse = WaterUse.DryOnly }, ApiFactory.Json))
+			.ReadAsync<InventoryItemDto>();
+		var at = (string time) => DateTimeOffset.Parse($"2037-03-07T{time}:00-05:00");
+		var setup = new SaveJobScheduleRequest(at("11:30"), "Truck 1", []);
+		var response = await owner.PostAsJsonAsync("/api/bookings", new SaveBookingRequest(
+			"Party Test", null, "1 Party St", "Monroe, NC 28110", Surface.Grass, null, setup, setup with { ScheduledAt = at("18:00") },
+			[new(null, false, slide.Id)], PartyStartsAt: at("12:00"), PartyEndsAt: at("16:00")), ApiFactory.Json);
+		var booking = await response.ReadAsync<BookingDto>();
+		Assert.Equal(at("12:00"), booking.PartyStartsAt);
+
+		var stop = (await (await owner.GetAsync("/api/route/plan?date=2037-03-07")).ReadAsync<RoutePlanDto>()).Trucks[0].Stops[0];
+
+		// Starts on time at 11:30, but a 45 minute slide isn't done until 12:15, after the party starts.
+		Assert.Equal(15, stop.MinutesLate);
+	}
+
+	[Fact]
+	public async Task Party_has_to_end_after_it_starts()
+	{
+		var at = (string time) => DateTimeOffset.Parse($"2037-03-08T{time}:00-05:00");
+		var setup = new SaveJobScheduleRequest(at("09:00"), "Truck 1", []);
+		var response = await owner.PostAsJsonAsync("/api/bookings", new SaveBookingRequest(
+			"Party Test", null, "1 Party St", null, Surface.Grass, null, setup, setup with { ScheduledAt = at("18:00") },
+			[new("Tables", false)], PartyStartsAt: at("14:00"), PartyEndsAt: at("12:00")), ApiFactory.Json);
+
+		Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+	}
+}

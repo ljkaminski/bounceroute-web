@@ -21,6 +21,8 @@ public sealed record BookingDto(
 	string CityStateZip,
 	Surface Surface,
 	string SiteNotes,
+	DateTimeOffset? PartyStartsAt,
+	DateTimeOffset? PartyEndsAt,
 	JobScheduleDto Setup,
 	JobScheduleDto Pickup,
 	IReadOnlyList<BookingItemDto> Items);
@@ -57,4 +59,6 @@ public sealed record SaveBookingRequest(
 	[property: MaxLength(500)] string? SiteNotes,
 	[property: Required] SaveJobScheduleRequest Setup,
 	[property: Required] SaveJobScheduleRequest Pickup,
-	[property: Required] IReadOnlyList<SaveBookingItemRequest> Items);
+	[property: Required] IReadOnlyList<SaveBookingItemRequest> Items,
+	DateTimeOffset? PartyStartsAt = null,
+	DateTimeOffset? PartyEndsAt = null);

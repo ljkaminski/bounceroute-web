@@ -163,6 +163,8 @@ public static class RouteEndpoints
 				.Select(assignment => assignment.CrewMember)
 				.OrderBy(crew => crew.Name)
 				.Select(crew => new CrewSummaryDto(crew.Id, crew.Name, crew.Initials))],
-			SetupTimes.ForItems(booking.Items, times));
+			SetupTimes.ForItems(booking.Items, times),
+			booking.PartyStartsAt,
+			booking.PartyEndsAt);
 	}
 }

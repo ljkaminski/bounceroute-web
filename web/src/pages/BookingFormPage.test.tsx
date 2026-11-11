@@ -13,6 +13,8 @@ const booking: Booking = {
   cityStateZip: 'Monroe, NC 28110',
   surface: 'Grass',
   siteNotes: '',
+  partyStartsAt: null,
+  partyEndsAt: null,
   setup: { id: 1, scheduledAt: '2026-11-14T13:00:00Z', truck: 'Truck 1', status: 'Upcoming', crewMemberIds: [] },
   pickup: { id: 2, scheduledAt: '2026-11-14T22:00:00Z', truck: 'Truck 1', status: 'Upcoming', crewMemberIds: [] },
   items: [],

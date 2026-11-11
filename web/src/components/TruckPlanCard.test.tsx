@@ -14,6 +14,7 @@ const stop = (patch: Partial<PlannedStop>): PlannedStop => ({
   finishAt: '2026-11-14T13:30:00Z',
   workMinutes: 30,
   minutesLate: 0,
+  partyStartsAt: null,
   ...patch,
 })
 

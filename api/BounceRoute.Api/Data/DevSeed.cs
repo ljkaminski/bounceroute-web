@@ -143,7 +143,7 @@ public static class DevSeed
 		Add("Avery Thompson", "(252) 555-0141", "118 Oak Hollow Dr", Surface.Grass, "Gate code 4412. Dog in the side yard.",
 			At(-1, 9), At(-1, 17), "Truck 1", [jordan, riley], ["Castle Combo", "Generator"], wet: true);
 		Add("Pitt County Parks", "(252) 555-0108", "2000 Cedar Ln", Surface.Grass, "Check in at the shelter office first.",
-			At(0, 8), At(0, 18), "Truck 2", [jordan, riley, sam], ["Tropical Water Slide", "Obstacle Course", "Generator", "Cornhole"]);
+			At(0, 8), At(0, 18), "Truck 2", [jordan, riley, sam], ["Tropical Water Slide", "Generator", "Cornhole"]);
 		Add("Quinn Walker", "(252) 555-0177", "406 Ridgeway St", Surface.Concrete, "Driveway setup, sandbags only.",
 			At(0, 9, 30), At(0, 16), "Truck 1", [casey, morgan], ["Dino Bounce House"]);
 		Add("Harper Lewis", "(252) 555-0163", "77 Lakeview Ct", Surface.Grass, "Backyard through the left gate. Slope near the fence.",

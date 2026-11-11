@@ -1505,6 +1505,8 @@
           "cityStateZip",
           "surface",
           "siteNotes",
+          "partyStartsAt",
+          "partyEndsAt",
           "setup",
           "pickup",
           "items"
@@ -1536,6 +1538,20 @@
           },
           "siteNotes": {
             "type": "string"
+          },
+          "partyStartsAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "partyEndsAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           },
           "setup": {
             "$ref": "#/components/schemas/JobScheduleDto"
@@ -2087,7 +2103,9 @@
           "units",
           "extras",
           "crew",
-          "workMinutes"
+          "workMinutes",
+          "partyStartsAt",
+          "partyEndsAt"
         ],
         "type": "object",
         "properties": {
@@ -2171,6 +2189,20 @@
           "workMinutes": {
             "type": "integer",
             "format": "int32"
+          },
+          "partyStartsAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "partyEndsAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -2246,7 +2278,8 @@
           "startAt",
           "finishAt",
           "workMinutes",
-          "minutesLate"
+          "minutesLate",
+          "partyStartsAt"
         ],
         "type": "object",
         "properties": {
@@ -2293,6 +2326,13 @@
           "minutesLate": {
             "type": "integer",
             "format": "int32"
+          },
+          "partyStartsAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -2442,6 +2482,20 @@
             "items": {
               "$ref": "#/components/schemas/SaveBookingItemRequest"
             }
+          },
+          "partyStartsAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "partyEndsAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },

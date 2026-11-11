@@ -14,7 +14,8 @@ public sealed record PlannedStopDto(
 	DateTimeOffset StartAt,
 	DateTimeOffset FinishAt,
 	int WorkMinutes,
-	int MinutesLate);
+	int MinutesLate,
+	DateTimeOffset? PartyStartsAt);
 
 public sealed record TruckPlanDto(
 	string Truck,

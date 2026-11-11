@@ -1624,6 +1624,10 @@ export interface components {
             cityStateZip: string;
             surface: components["schemas"]["Surface"];
             siteNotes: string;
+            /** Format: date-time */
+            partyStartsAt: null | string;
+            /** Format: date-time */
+            partyEndsAt: null | string;
             setup: components["schemas"]["JobScheduleDto"];
             pickup: components["schemas"]["JobScheduleDto"];
             items: components["schemas"]["BookingItemDto"][];
@@ -1800,6 +1804,10 @@ export interface components {
             crew: components["schemas"]["CrewSummaryDto"][];
             /** Format: int32 */
             workMinutes: number;
+            /** Format: date-time */
+            partyStartsAt: null | string;
+            /** Format: date-time */
+            partyEndsAt: null | string;
         };
         JobScheduleDto: {
             /** Format: int32 */
@@ -1838,6 +1846,8 @@ export interface components {
             workMinutes: number;
             /** Format: int32 */
             minutesLate: number;
+            /** Format: date-time */
+            partyStartsAt: null | string;
         };
         ResetPasswordRequest: {
             newPassword: string;
@@ -1871,6 +1881,10 @@ export interface components {
             setup: components["schemas"]["SaveJobScheduleRequest"];
             pickup: components["schemas"]["SaveJobScheduleRequest"];
             items: components["schemas"]["SaveBookingItemRequest"][];
+            /** Format: date-time */
+            partyStartsAt?: null | string;
+            /** Format: date-time */
+            partyEndsAt?: null | string;
         };
         SaveCompanySettingsRequest: {
             companyName: null | string;

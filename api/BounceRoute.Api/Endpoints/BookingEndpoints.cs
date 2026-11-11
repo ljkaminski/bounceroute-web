@@ -168,6 +168,9 @@ public static class BookingEndpoints
 		if (request.Pickup.ScheduledAt <= request.Setup.ScheduledAt)
 			errors["Pickup.ScheduledAt"] = ["Pickup must be after setup."];
 
+		if (request.PartyStartsAt is { } starts && request.PartyEndsAt is { } ends && ends <= starts)
+			errors["PartyEndsAt"] = ["The party has to end after it starts."];
+
 		if (request.Items.Count == 0)
 			errors["Items"] = ["Add at least one item."];
 
@@ -187,6 +190,8 @@ public static class BookingEndpoints
 		booking.CityStateZip = request.CityStateZip?.Trim() ?? string.Empty;
 		booking.Surface = request.Surface;
 		booking.SiteNotes = request.SiteNotes?.Trim() ?? string.Empty;
+		booking.PartyStartsAt = request.PartyStartsAt?.ToUniversalTime();
+		booking.PartyEndsAt = request.PartyEndsAt?.ToUniversalTime();
 		booking.UpdatedAt = now;
 
 		ApplySchedule(request.Setup, booking.Jobs.Single(job => job.Type == JobType.Setup));
@@ -252,6 +257,8 @@ public static class BookingEndpoints
 		booking.CityStateZip,
 		booking.Surface,
 		booking.SiteNotes,
+		booking.PartyStartsAt,
+		booking.PartyEndsAt,
 		ToDto(booking.Jobs.Single(job => job.Type == JobType.Setup)),
 		ToDto(booking.Jobs.Single(job => job.Type == JobType.Pickup)),
 		[.. booking.Items.OrderBy(item => item.Id).Select(ToDto)]);

@@ -20,6 +20,12 @@ public sealed class Booking
 
 	public string SiteNotes { get; set; } = string.Empty;
 
+	// When the customer's party runs. Setup has to be finished before it starts, and pickup can't
+	// happen until it ends. The route planner works out the setup and pickup times from these.
+	public DateTimeOffset? PartyStartsAt { get; set; }
+
+	public DateTimeOffset? PartyEndsAt { get; set; }
+
 	// Map position, looked up from the address the first time a route plan needs it.
 	// GeocodedAddress is the address it was looked up for, so an edited address gets looked up again.
 	public double? Latitude { get; set; }

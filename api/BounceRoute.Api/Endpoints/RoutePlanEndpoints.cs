@@ -68,7 +68,7 @@ public static class RoutePlanEndpoints
 				: startAt.AddMinutes(work);
 
 			planned.Add(new PlannedStopDto(job.Id, job.Type, job.Booking.CustomerName, job.Booking.Street, job.ScheduledAt,
-				drive, arrive, startAt, finishAt, work, (int)Math.Max(0, Math.Round((startAt - job.ScheduledAt).TotalMinutes))));
+				drive, arrive, startAt, finishAt, work, MinutesLate(job, startAt, finishAt), job.Booking.PartyStartsAt));
 			previousFinish = finishAt;
 		}
 
@@ -87,6 +87,16 @@ public static class RoutePlanEndpoints
 			knownDrives.Sum(minutes => minutes ?? 0),
 			DriveTimesComplete: shop is not null && knownDrives.All(minutes => minutes is not null),
 			planned);
+	}
+
+	// With a party time, a setup is late if it won't be finished before the party starts; that's what the customer
+	// cares about. Without one (older bookings), it's late if the crew starts after the scheduled time.
+	internal static int MinutesLate(Job job, DateTimeOffset startAt, DateTimeOffset finishAt)
+	{
+		var late = job is { Type: JobType.Setup, Booking.PartyStartsAt: DateTimeOffset party }
+			? finishAt - party
+			: startAt - job.ScheduledAt;
+		return (int)Math.Max(0, Math.Round(late.TotalMinutes));
 	}
 
 	// Drive minutes into each stop (the first stop's is from the shop), plus the drive home.

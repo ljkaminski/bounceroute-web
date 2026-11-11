@@ -25,7 +25,9 @@ public sealed record JobCardDto(
 	IReadOnlyList<BookingItemDto> Units,
 	IReadOnlyList<BookingItemDto> Extras,
 	IReadOnlyList<CrewSummaryDto> Crew,
-	int WorkMinutes);
+	int WorkMinutes,
+	DateTimeOffset? PartyStartsAt,
+	DateTimeOffset? PartyEndsAt);
 
 public sealed record RouteDayDto(DateOnly Date, IReadOnlyList<JobCardDto> Jobs);
 

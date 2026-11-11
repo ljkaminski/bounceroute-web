@@ -25,6 +25,8 @@ const job: JobCard = {
   extras: [],
   crew: [{ id: 1, name: 'Jordan Hale', initials: 'JH' }],
   workMinutes: 30,
+  partyStartsAt: null,
+  partyEndsAt: null,
 }
 
 const user = (role: CurrentUser['role']): CurrentUser => ({
