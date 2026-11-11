@@ -5,6 +5,7 @@ import { useCurrentUser, useLogout } from '../auth/useAuth'
 const officeLinks = [
   { to: '/', label: 'Route', end: true },
   { to: '/bookings', label: 'Bookings', end: false },
+  { to: '/inventory', label: 'Inventory', end: false },
   { to: '/crew', label: 'Crew & pay', end: false },
 ]
 

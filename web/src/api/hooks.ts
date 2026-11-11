@@ -1,5 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, unwrap, type CreateUserRequest, type SaveBookingRequest, type UpdateUserRequest } from './client'
+import {
+  api,
+  unwrap,
+  type CreateUserRequest,
+  type SaveBookingRequest,
+  type SaveInventoryItemRequest,
+  type UpdateUserRequest,
+} from './client'
 
 export const keys = {
   route: (date: string) => ['route', date] as const,
@@ -10,6 +17,9 @@ export const keys = {
   units: (from: string, to: string) => ['units', from, to] as const,
   myUnits: (from: string, to: string) => ['my-units', from, to] as const,
   users: ['users'] as const,
+  inventory: (includeInactive: boolean) => ['inventory', includeInactive] as const,
+  availability: (setupAt: string, pickupAt: string, excludeBookingId?: number) =>
+    ['availability', setupAt, pickupAt, excludeBookingId] as const,
 }
 
 export const useRouteDay = (date: string) =>
@@ -41,6 +51,23 @@ export const useCrew = (includeInactive = false) =>
   useQuery({
     queryKey: [...keys.crew, includeInactive],
     queryFn: () => unwrap(api.GET('/api/crew', { params: { query: { includeInactive } } })),
+  })
+
+export const useInventory = (includeInactive = false) =>
+  useQuery({
+    queryKey: keys.inventory(includeInactive),
+    queryFn: () => unwrap(api.GET('/api/inventory', { params: { query: { includeInactive } } })),
+  })
+
+// How many of each item are free for a setup-to-pickup window (ISO timestamps).
+export const useAvailability = (setupAt: string | null, pickupAt: string | null, excludeBookingId?: number) =>
+  useQuery({
+    queryKey: keys.availability(setupAt ?? '', pickupAt ?? '', excludeBookingId),
+    queryFn: () =>
+      unwrap(api.GET('/api/inventory/availability', {
+        params: { query: { setupAt: setupAt!, pickupAt: pickupAt!, excludeBookingId } },
+      })),
+    enabled: setupAt !== null && pickupAt !== null && pickupAt > setupAt,
   })
 
 export const useUsers = () =>
@@ -151,5 +178,24 @@ export function useChangePassword() {
   return useMutation({
     mutationFn: (body: { currentPassword: string; newPassword: string }) =>
       unwrap(api.POST('/api/auth/password', { body })),
+  })
+}
+
+export function useSaveInventoryItem(id: number | undefined) {
+  const refresh = useRefreshAll()
+  return useMutation({
+    mutationFn: (body: SaveInventoryItemRequest) =>
+      id === undefined
+        ? unwrap(api.POST('/api/inventory', { body }))
+        : unwrap(api.PUT('/api/inventory/{id}', { params: { path: { id } }, body })),
+    onSuccess: refresh,
+  })
+}
+
+export function useImportInventory() {
+  const refresh = useRefreshAll()
+  return useMutation({
+    mutationFn: (body: SaveInventoryItemRequest[]) => unwrap(api.POST('/api/inventory/import', { body })),
+    onSuccess: refresh,
   })
 }

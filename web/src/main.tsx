@@ -12,6 +12,7 @@ import { AccountsPage } from './pages/AccountsPage'
 import { BookingFormPage } from './pages/BookingFormPage'
 import { BookingsPage } from './pages/BookingsPage'
 import { CrewPage } from './pages/CrewPage'
+import { InventoryPage } from './pages/InventoryPage'
 import { JobPage } from './pages/JobPage'
 import { ChangePasswordPage } from './pages/ChangePasswordPage'
 import { LoginPage } from './pages/LoginPage'
@@ -53,6 +54,7 @@ const router = createBrowserRouter([
               { path: 'bookings/new', element: <BookingFormPage /> },
               { path: 'bookings/:id/edit', element: <BookingFormPage /> },
               { path: 'crew', element: <CrewPage /> },
+              { path: 'inventory', element: <InventoryPage /> },
             ],
           },
           {
