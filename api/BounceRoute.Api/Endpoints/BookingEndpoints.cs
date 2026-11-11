@@ -34,6 +34,8 @@ public static class BookingEndpoints
 
 		return await db.Bookings
 			.Where(booking => booking.Jobs.Any(job => job.Type == JobType.Setup && job.ScheduledAt >= start && job.ScheduledAt < end))
+			// Sort before projecting: EF Core can't translate ordering by a property of the DTO.
+			.OrderBy(booking => booking.Jobs.Where(job => job.Type == JobType.Setup).Min(job => job.ScheduledAt))
 			.Select(booking => new BookingSummaryDto(
 				booking.Id,
 				booking.JobNumber,
@@ -43,7 +45,6 @@ public static class BookingEndpoints
 				booking.Jobs.First(job => job.Type == JobType.Pickup).ScheduledAt,
 				booking.Items.Count(item => item.IsUnit),
 				booking.Jobs.All(job => job.Status == JobStatus.Done)))
-			.OrderBy(summary => summary.SetupAt)
 			.ToListAsync();
 	}
 

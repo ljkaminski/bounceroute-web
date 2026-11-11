@@ -32,6 +32,19 @@ public sealed class BookingTests(ApiFactory factory) : IClassFixture<ApiFactory>
 	}
 
 	[Fact]
+	public async Task Booking_list_shows_bookings_by_setup_time()
+	{
+		var later = await CreateBookingAsync("2030-03-20T13:00:00-04:00", "2030-03-20T18:00:00-04:00", []);
+		var earlier = await CreateBookingAsync("2030-03-20T08:00:00-04:00", "2030-03-21T09:00:00-04:00", []);
+
+		var list = await (await client.GetAsync("/api/bookings?from=2030-03-20&to=2030-03-20")).ReadAsync<List<BookingSummaryDto>>();
+
+		Assert.Equal([earlier.Id, later.Id], list.Select(booking => booking.Id));
+		Assert.Equal(1, list[0].UnitCount);
+		Assert.False(list[0].IsComplete);
+	}
+
+	[Fact]
 	public async Task Late_night_job_belongs_to_the_business_day_not_the_utc_day()
 	{
 		// 11pm Eastern is already the next day in UTC.
