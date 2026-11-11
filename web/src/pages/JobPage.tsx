@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useCompleteJob, useCrew, useJob, useReopenJob, useSetItemLoaded } from '../api/hooks'
 import type { JobCard } from '../api/client'
+import { isOffice } from '../auth/roles'
+import { useCurrentUser } from '../auth/useAuth'
 import { CrewChips, StatusBadge, TypeBadge } from '../components/Badges'
 import { ErrorBox, Loading } from '../components/Feedback'
 import { formatShortDateTime, formatTime, toDateKey } from '../lib/dates'
@@ -16,6 +18,7 @@ export function JobPage() {
 }
 
 function JobDetail({ job }: { job: JobCard }) {
+  const office = isOffice(useCurrentUser().data)
   const address = `${job.street}, ${job.cityStateZip}`
   const routeDate = toDateKey(new Date(job.scheduledAt))
 
@@ -51,9 +54,11 @@ function JobDetail({ job }: { job: JobCard }) {
           >
             Directions
           </a>
-          <Link className="btn-secondary" to={`/bookings/${job.bookingId}/edit`}>
-            Edit booking
-          </Link>
+          {office && (
+            <Link className="btn-secondary" to={`/bookings/${job.bookingId}/edit`}>
+              Edit booking
+            </Link>
+          )}
         </div>
 
         {job.siteNotes && (
@@ -79,7 +84,7 @@ function JobDetail({ job }: { job: JobCard }) {
               <span className="text-sm text-slate-600">{job.crew.map((member) => member.name).join(', ')}</span>
             </div>
           </div>
-          <CompletePanel job={job} />
+          {office ? <CompletePanel job={job} /> : <CrewCompletePanel job={job} />}
         </section>
       </div>
     </div>
@@ -113,23 +118,42 @@ function LoadList({ title, items }: { title: string; items: JobCard['units'] }) 
   )
 }
 
+function CompletedNote({ job }: { job: JobCard }) {
+  const reopen = useReopenJob()
+  return (
+    <div className="rounded-xl bg-green-50 p-4 text-sm text-green-900 ring-1 ring-green-200">
+      Completed {job.completedAt && `at ${formatTime(job.completedAt)}`}
+      {job.completedBy && ` by ${job.completedBy}`}.
+      <button className="ml-2 font-semibold underline" onClick={() => reopen.mutate(job.jobId)} disabled={reopen.isPending}>
+        Undo
+      </button>
+    </div>
+  )
+}
+
+// Crew complete their own jobs; the API records who they are.
+function CrewCompletePanel({ job }: { job: JobCard }) {
+  const complete = useCompleteJob()
+  if (job.status === 'Done') return <CompletedNote job={job} />
+
+  return (
+    <div className="space-y-2">
+      <button className="btn-primary w-full py-3 text-base" disabled={complete.isPending}
+        onClick={() => complete.mutate({ jobId: job.jobId })}>
+        Mark complete
+      </button>
+      {complete.isError && <ErrorBox error={complete.error} />}
+    </div>
+  )
+}
+
+// Office staff record which crew member finished the job.
 function CompletePanel({ job }: { job: JobCard }) {
   const crew = useCrew()
   const complete = useCompleteJob()
-  const reopen = useReopenJob()
   const [crewMemberId, setCrewMemberId] = useState<number | ''>(job.crew[0]?.id ?? '')
 
-  if (job.status === 'Done') {
-    return (
-      <div className="rounded-xl bg-green-50 p-4 text-sm text-green-900 ring-1 ring-green-200">
-        Completed {job.completedAt && `at ${formatTime(job.completedAt)}`}
-        {job.completedBy && ` by ${job.completedBy}`}.
-        <button className="ml-2 font-semibold underline" onClick={() => reopen.mutate(job.jobId)} disabled={reopen.isPending}>
-          Undo
-        </button>
-      </div>
-    )
-  }
+  if (job.status === 'Done') return <CompletedNote job={job} />
 
   return (
     <form

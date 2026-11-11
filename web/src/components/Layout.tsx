@@ -1,15 +1,22 @@
 import { NavLink, Outlet } from 'react-router'
+import { isOffice } from '../auth/roles'
 import { useCurrentUser, useLogout } from '../auth/useAuth'
 
-const links = [
+const officeLinks = [
   { to: '/', label: 'Route', end: true },
   { to: '/bookings', label: 'Bookings', end: false },
   { to: '/crew', label: 'Crew & pay', end: false },
 ]
 
+const crewLinks = [
+  { to: '/', label: 'My route', end: true },
+  { to: '/me/units', label: 'My units', end: false },
+]
+
 export function Layout() {
   const me = useCurrentUser().data
   const logout = useLogout()
+  const links = isOffice(me) ? officeLinks : crewLinks
 
   return (
     <div className="min-h-dvh">

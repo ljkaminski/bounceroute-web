@@ -1,32 +1,12 @@
 import { useState } from 'react'
 import { useAddCrewMember, useUnitTotals } from '../api/hooks'
 import { ErrorBox, Loading } from '../components/Feedback'
-import { addDays, monthRange, parseDateKey, today, weekendStart } from '../lib/dates'
-
-type Preset = 'weekend' | 'week' | 'month' | 'custom'
-
-function presetRange(preset: Exclude<Preset, 'custom'>): [string, string] {
-  const now = today()
-  if (preset === 'weekend') {
-    const friday = weekendStart(now)
-    return [friday, addDays(friday, 3)]
-  }
-  if (preset === 'week') {
-    const monday = addDays(now, -((parseDateKey(now).getDay() + 6) % 7))
-    return [monday, addDays(monday, 6)]
-  }
-  return monthRange(now)
-}
+import { PeriodPicker } from '../components/PeriodPicker'
+import { usePeriod } from '../lib/usePeriod'
 
 export function CrewPage() {
-  const [preset, setPreset] = useState<Preset>('weekend')
-  const [range, setRange] = useState(() => presetRange('weekend'))
-  const totals = useUnitTotals(range[0], range[1])
-
-  const choose = (next: Preset) => {
-    setPreset(next)
-    if (next !== 'custom') setRange(presetRange(next))
-  }
+  const period = usePeriod()
+  const totals = useUnitTotals(period.range[0], period.range[1])
 
   return (
     <div className="space-y-5">
@@ -35,28 +15,7 @@ export function CrewPage() {
         <p className="text-sm text-slate-500">Units on completed jobs. Extras like generators don't count.</p>
       </div>
 
-      <div className="flex flex-wrap items-end gap-2">
-        <div className="flex rounded-xl bg-white p-1 ring-1 ring-slate-300" role="group" aria-label="Period">
-          {(['weekend', 'week', 'month', 'custom'] as const).map((option) => (
-            <button
-              key={option}
-              onClick={() => choose(option)}
-              aria-pressed={preset === option}
-              className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${preset === option ? 'bg-navy text-white' : 'text-slate-600'}`}
-            >
-              {option === 'weekend' ? 'This weekend' : option === 'custom' ? 'Custom' : `This ${option}`}
-            </button>
-          ))}
-        </div>
-        {preset === 'custom' && (
-          <>
-            <input type="date" className="field w-auto" aria-label="From" value={range[0]}
-              onChange={(event) => event.target.value && setRange([event.target.value, range[1]])} />
-            <input type="date" className="field w-auto" aria-label="To" value={range[1]}
-              onChange={(event) => event.target.value && setRange([range[0], event.target.value])} />
-          </>
-        )}
-      </div>
+      <PeriodPicker period={period} />
 
       {totals.isPending ? (
         <Loading what="Counting units" />

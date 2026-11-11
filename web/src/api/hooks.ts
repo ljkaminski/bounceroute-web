@@ -8,6 +8,7 @@ export const keys = {
   booking: (id: number) => ['booking', id] as const,
   crew: ['crew'] as const,
   units: (from: string, to: string) => ['units', from, to] as const,
+  myUnits: (from: string, to: string) => ['my-units', from, to] as const,
 }
 
 export const useRouteDay = (date: string) =>
@@ -47,6 +48,12 @@ export const useUnitTotals = (from: string, to: string) =>
     queryFn: () => unwrap(api.GET('/api/crew/units', { params: { query: { from, to } } })),
   })
 
+export const useMyUnits = (from: string, to: string) =>
+  useQuery({
+    queryKey: keys.myUnits(from, to),
+    queryFn: () => unwrap(api.GET('/api/me/units', { params: { query: { from, to } } })),
+  })
+
 // Any change to a job, booking, or crew can move what the route, booking list, and pay totals show,
 // so mutations refresh all of them. The data is small; simple beats clever here.
 function useRefreshAll() {
@@ -76,7 +83,8 @@ export function useDeleteBooking() {
 export function useCompleteJob() {
   const refresh = useRefreshAll()
   return useMutation({
-    mutationFn: ({ jobId, crewMemberId }: { jobId: number; crewMemberId: number }) =>
+    // Crew leave crewMemberId out and the API records them; office staff pick someone.
+    mutationFn: ({ jobId, crewMemberId = null }: { jobId: number; crewMemberId?: number | null }) =>
       unwrap(api.POST('/api/jobs/{id}/complete', { params: { path: { id: jobId } }, body: { crewMemberId } })),
     onSuccess: refresh,
   })

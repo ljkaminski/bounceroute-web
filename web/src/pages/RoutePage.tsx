@@ -1,5 +1,7 @@
 import { Link, useSearchParams } from 'react-router'
 import { useRouteDay } from '../api/hooks'
+import { isOffice } from '../auth/roles'
+import { useCurrentUser } from '../auth/useAuth'
 import { EmptyState, ErrorBox, Loading } from '../components/Feedback'
 import { JobCardRow } from '../components/JobCardRow'
 import { addDays, formatDay, today } from '../lib/dates'
@@ -8,6 +10,7 @@ export function RoutePage() {
   const [params, setParams] = useSearchParams()
   const date = params.get('date') ?? today()
   const route = useRouteDay(date)
+  const office = isOffice(useCurrentUser().data)
   const goTo = (day: string) => setParams(day === today() ? {} : { date: day })
 
   const jobs = route.data?.jobs ?? []
@@ -18,7 +21,9 @@ export function RoutePage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold text-brand">{date === today() ? "Today's route" : 'Route'}</p>
+          <p className="text-sm font-semibold text-brand">
+            {office ? (date === today() ? "Today's route" : 'Route') : date === today() ? 'My route today' : 'My route'}
+          </p>
           <h1 className="text-2xl font-bold">{formatDay(date)}</h1>
           {jobs.length > 0 && (
             <p className="mt-1 text-sm text-slate-500">
@@ -52,10 +57,16 @@ export function RoutePage() {
         <ErrorBox error={route.error} />
       ) : jobs.length === 0 ? (
         <EmptyState>
-          No jobs on this day.{' '}
-          <Link to="/bookings/new" className="font-semibold text-brand hover:underline">
-            Add a booking
-          </Link>
+          {office ? (
+            <>
+              No jobs on this day.{' '}
+              <Link to="/bookings/new" className="font-semibold text-brand hover:underline">
+                Add a booking
+              </Link>
+            </>
+          ) : (
+            "You're not on any jobs this day."
+          )}
         </EmptyState>
       ) : (
         <ol className="space-y-3">

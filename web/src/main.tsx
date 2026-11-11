@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router'
 import { ApiError } from './api/client'
 import { RequireAuth } from './auth/RequireAuth'
+import { RequireRole } from './auth/RequireRole'
 import { meKey } from './auth/useAuth'
 import { Layout } from './components/Layout'
 import './index.css'
@@ -12,6 +13,7 @@ import { BookingsPage } from './pages/BookingsPage'
 import { CrewPage } from './pages/CrewPage'
 import { JobPage } from './pages/JobPage'
 import { LoginPage } from './pages/LoginPage'
+import { MyUnitsPage } from './pages/MyUnitsPage'
 import { RoutePage } from './pages/RoutePage'
 
 // When the session runs out mid-use, any 401 sends the app back to the sign-in page.
@@ -40,10 +42,16 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <RoutePage /> },
           { path: 'jobs/:id', element: <JobPage /> },
-          { path: 'bookings', element: <BookingsPage /> },
-          { path: 'bookings/new', element: <BookingFormPage /> },
-          { path: 'bookings/:id/edit', element: <BookingFormPage /> },
-          { path: 'crew', element: <CrewPage /> },
+          { path: 'me/units', element: <MyUnitsPage /> },
+          {
+            element: <RequireRole roles={['Owner', 'Office']} />,
+            children: [
+              { path: 'bookings', element: <BookingsPage /> },
+              { path: 'bookings/new', element: <BookingFormPage /> },
+              { path: 'bookings/:id/edit', element: <BookingFormPage /> },
+              { path: 'crew', element: <CrewPage /> },
+            ],
+          },
         ],
       },
     ],
