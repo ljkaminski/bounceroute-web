@@ -10,6 +10,11 @@ public sealed class OpenRouteServiceMaps(HttpClient http, IMemoryCache cache, IL
 {
 	public const string ApiKeySetting = "Maps:OpenRouteServiceKey";
 
+	// When it can't find a street, the service falls back to the middle of the town or zip code. Using that would
+	// put different houses at the same spot and show 0-minute drives, so anything vaguer than a street counts as
+	// not found and the route plan says so. House numbers are often missing from the map data, so a street is enough.
+	private static readonly HashSet<string> PreciseEnough = ["address", "street", "venue"];
+
 	public bool IsConfigured => true;
 
 	public async Task<GeoPoint?> GeocodeAsync(string address, CancellationToken cancellationToken = default)
@@ -21,6 +26,13 @@ public sealed class OpenRouteServiceMaps(HttpClient http, IMemoryCache cache, IL
 			var features = document.RootElement.GetProperty("features");
 			if (features.GetArrayLength() == 0)
 				return null;
+
+			var layer = features[0].GetProperty("properties").GetProperty("layer").GetString();
+			if (layer is null || !PreciseEnough.Contains(layer))
+			{
+				logger.LogInformation("Only found {Layer} for {Address}; treating as not found", layer, address);
+				return null;
+			}
 
 			// GeoJSON order is longitude, latitude.
 			var coordinates = features[0].GetProperty("geometry").GetProperty("coordinates");

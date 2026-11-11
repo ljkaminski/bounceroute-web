@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using BounceRoute.Api.Maps;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace BounceRoute.Api.Tests;
@@ -34,12 +35,20 @@ public sealed class OpenRouteServiceMapsTests
 	[Fact]
 	public async Task Geocode_reads_latitude_and_longitude_in_the_right_order()
 	{
-		var (maps, handler) = Create((_, _) => Json("""{"features":[{"geometry":{"coordinates":[-80.55,34.98]}}]}"""));
+		var (maps, handler) = Create((_, _) => Json("""{"features":[{"geometry":{"coordinates":[-80.55,34.98]},"properties":{"layer":"street"}}]}"""));
 
 		var point = await maps.GeocodeAsync("118 Oak Hollow Dr, Monroe, NC 28110");
 
 		Assert.Equal(new GeoPoint(34.98, -80.55), point);
 		Assert.Contains("boundary.country=US", handler.Requests[0].Request.RequestUri!.Query);
+	}
+
+	[Fact]
+	public async Task Town_or_zip_level_matches_count_as_not_found()
+	{
+		var (maps, _) = Create((_, _) => Json("""{"features":[{"geometry":{"coordinates":[-80.58,35.02]},"properties":{"layer":"locality"}}]}"""));
+
+		Assert.Null(await maps.GeocodeAsync("118 Made Up Dr, Monroe, NC 28110"));
 	}
 
 	[Fact]
@@ -83,5 +92,30 @@ public sealed class OpenRouteServiceMapsTests
 		var legs = await maps.DriveMinutesAsync([new(35.0, -80.5), new(35.1, -80.6)]);
 
 		Assert.Equal([null], legs);
+	}
+}
+
+public sealed class MapsConfigurationTests
+{
+	private sealed class KeyedApiFactory : ApiFactory
+	{
+		protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
+		{
+			base.ConfigureWebHost(builder);
+			// Real OpenRouteService keys are base64 and can end in "=", which a normal Authorization header rejects.
+			builder.UseSetting(OpenRouteServiceMaps.ApiKeySetting, "eyJvcmciOiJ0ZXN0In0=");
+		}
+	}
+
+	[Fact]
+	public async Task A_key_ending_in_equals_signs_sets_up_the_map_client()
+	{
+		await using var factory = new KeyedApiFactory();
+		await factory.InitializeAsync();
+
+		using var scope = factory.Services.CreateScope();
+		var maps = scope.ServiceProvider.GetRequiredService<IMaps>();
+
+		Assert.IsType<OpenRouteServiceMaps>(maps);
 	}
 }

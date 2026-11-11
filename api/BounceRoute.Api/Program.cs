@@ -81,7 +81,8 @@ else
 	builder.Services.AddHttpClient<IMaps, OpenRouteServiceMaps>(client =>
 	{
 		client.BaseAddress = new Uri("https://api.openrouteservice.org/");
-		client.DefaultRequestHeaders.Add("Authorization", mapsKey);
+		// OpenRouteService wants the bare key, which isn't a "scheme value" pair, so skip header validation.
+		client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", mapsKey);
 		client.Timeout = TimeSpan.FromSeconds(10);
 	});
 builder.Services.AddSingleton(services => new BusinessClock(
