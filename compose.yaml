@@ -1,0 +1,16 @@
+# Local Postgres for development. Skip this if you already run Postgres on 5432
+# with a bounceroute/bounceroute login (see README).
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: bounceroute
+      POSTGRES_USER: bounceroute
+      POSTGRES_PASSWORD: bounceroute
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:

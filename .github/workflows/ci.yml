@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  api:
+    name: API (build + integration tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: dotnet tool restore
+      - run: dotnet build --configuration Release
+      # Integration tests start their own Postgres with Testcontainers (Docker is on the runner).
+      - run: dotnet test --configuration Release --no-build
+      - name: OpenAPI document is up to date
+        run: git diff --exit-code openapi/
+      - name: No pending EF Core model changes
+        run: dotnet ef migrations has-pending-model-changes --project api/BounceRoute.Api
+
+  web:
+    name: Web (lint + test + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: Generated API types match the OpenAPI document
+        run: npm run gen:api && git diff --exit-code src/api/schema.d.ts
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build

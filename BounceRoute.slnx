@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/api/">
+    <Project Path="api/BounceRoute.Api.Tests/BounceRoute.Api.Tests.csproj" />
+    <Project Path="api/BounceRoute.Api/BounceRoute.Api.csproj" />
+  </Folder>
+</Solution>
