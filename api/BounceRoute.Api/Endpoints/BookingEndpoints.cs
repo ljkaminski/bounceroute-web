@@ -59,7 +59,8 @@ public static class BookingEndpoints
 
 	private static async Task<Results<CreatedAtRoute<BookingDto>, ValidationProblem>> CreateBooking(SaveBookingRequest request, BounceRouteDbContext db, TimeProvider time)
 	{
-		if (await ValidateAsync(request, db) is { } problem)
+		var inventory = await LoadInventoryAsync(request, db);
+		if (await ValidateAsync(request, db, inventory, alreadyOnBooking: []) is { } problem)
 			return problem;
 
 		var now = time.GetUtcNow();
@@ -68,7 +69,7 @@ public static class BookingEndpoints
 			CreatedAt = now,
 			Jobs = [new Job { Type = JobType.Setup }, new Job { Type = JobType.Pickup }]
 		};
-		Apply(request, booking, now);
+		Apply(request, booking, inventory, now);
 		db.Bookings.Add(booking);
 		await db.SaveChangesAsync();
 
@@ -83,10 +84,12 @@ public static class BookingEndpoints
 		if (booking is null)
 			return TypedResults.NotFound();
 
-		if (await ValidateAsync(request, db) is { } problem)
+		var inventory = await LoadInventoryAsync(request, db);
+		var alreadyOnBooking = booking.Items.Where(item => item.InventoryItemId is not null).Select(item => item.InventoryItemId!.Value).ToHashSet();
+		if (await ValidateAsync(request, db, inventory, alreadyOnBooking) is { } problem)
 			return problem;
 
-		Apply(request, booking, time.GetUtcNow());
+		Apply(request, booking, inventory, time.GetUtcNow());
 		await db.SaveChangesAsync();
 		return TypedResults.Ok(ToDto(booking));
 	}
@@ -101,9 +104,42 @@ public static class BookingEndpoints
 	}
 
 	// Field-level rules (required, lengths) are checked by the framework; these need the database or two fields.
-	private static async Task<ValidationProblem?> ValidateAsync(SaveBookingRequest request, BounceRouteDbContext db)
+	private static Task<Dictionary<int, InventoryItem>> LoadInventoryAsync(SaveBookingRequest request, BounceRouteDbContext db)
+	{
+		var ids = request.Items.Where(item => item.InventoryItemId is not null).Select(item => item.InventoryItemId!.Value).Distinct().ToList();
+		return db.InventoryItems.Where(item => ids.Contains(item.Id)).ToDictionaryAsync(item => item.Id);
+	}
+
+	private static async Task<ValidationProblem?> ValidateAsync(
+		SaveBookingRequest request, BounceRouteDbContext db, Dictionary<int, InventoryItem> inventory, HashSet<int> alreadyOnBooking)
 	{
 		var errors = new Dictionary<string, string[]>();
+		var itemErrors = new List<string>();
+
+		foreach (var item in request.Items)
+		{
+			if (item.InventoryItemId is not int inventoryId)
+			{
+				if (string.IsNullOrWhiteSpace(item.Name))
+					itemErrors.Add("Each item needs a name or an inventory item.");
+				continue;
+			}
+
+			if (!inventory.TryGetValue(inventoryId, out var owned))
+				itemErrors.Add($"No inventory item with id {inventoryId}.");
+			// A retired item can stay on a booking that already had it, but can't be newly booked.
+			else if (!owned.IsActive && !alreadyOnBooking.Contains(inventoryId))
+				itemErrors.Add($"{owned.Name} has been retired.");
+			else if (owned.WaterUse == WaterUse.WetOrDry && item.IsWet is null)
+				itemErrors.Add($"Choose wet or dry for {owned.Name}.");
+			else if (owned.WaterUse == WaterUse.DryOnly && item.IsWet == true)
+				itemErrors.Add($"{owned.Name} is dry use only.");
+			else if (owned.WaterUse == WaterUse.WetOnly && item.IsWet == false)
+				itemErrors.Add($"{owned.Name} is water use only.");
+		}
+
+		if (itemErrors.Count > 0)
+			errors["Items"] = [.. itemErrors];
 
 		if (request.Pickup.ScheduledAt <= request.Setup.ScheduledAt)
 			errors["Pickup.ScheduledAt"] = ["Pickup must be after setup."];
@@ -119,7 +155,7 @@ public static class BookingEndpoints
 		return errors.Count == 0 ? null : TypedResults.ValidationProblem(errors);
 	}
 
-	private static void Apply(SaveBookingRequest request, Booking booking, DateTimeOffset now)
+	private static void Apply(SaveBookingRequest request, Booking booking, Dictionary<int, InventoryItem> inventory, DateTimeOffset now)
 	{
 		booking.CustomerName = request.CustomerName.Trim();
 		booking.Phone = request.Phone?.Trim() ?? string.Empty;
@@ -137,12 +173,22 @@ public static class BookingEndpoints
 		booking.Items.Clear();
 		foreach (var item in request.Items)
 		{
-			var name = item.Name.Trim();
+			var owned = item.InventoryItemId is int id ? inventory[id] : null;
+			var name = owned?.Name ?? item.Name!.Trim();
+			var isUnit = owned?.IsUnit ?? item.IsUnit;
 			booking.Items.Add(new BookingItem
 			{
 				Name = name,
-				IsUnit = item.IsUnit,
-				IsLoaded = loadedBefore.Contains((name, item.IsUnit))
+				IsUnit = isUnit,
+				InventoryItemId = owned?.Id,
+				IsWet = owned?.WaterUse switch
+				{
+					WaterUse.DryOnly => false,
+					WaterUse.WetOnly => true,
+					WaterUse.WetOrDry => item.IsWet,
+					_ => null
+				},
+				IsLoaded = loadedBefore.Contains((name, isUnit))
 			});
 		}
 	}
@@ -168,7 +214,8 @@ public static class BookingEndpoints
 		return (tracked ? query : query.AsNoTracking()).FirstOrDefaultAsync(booking => booking.Id == id);
 	}
 
-	internal static BookingItemDto ToDto(BookingItem item) => new(item.Id, item.Name, item.IsUnit, item.IsLoaded);
+	internal static BookingItemDto ToDto(BookingItem item) =>
+		new(item.Id, item.Name, item.IsUnit, item.IsLoaded, item.InventoryItemId, item.IsWet);
 
 	private static BookingDto ToDto(Booking booking) => new(
 		booking.Id,

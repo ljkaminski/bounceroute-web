@@ -1008,7 +1008,9 @@
           "id",
           "name",
           "isUnit",
-          "isLoaded"
+          "isLoaded",
+          "inventoryItemId",
+          "isWet"
         ],
         "type": "object",
         "properties": {
@@ -1024,6 +1026,19 @@
           },
           "isLoaded": {
             "type": "boolean"
+          },
+          "inventoryItemId": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "isWet": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -1589,10 +1604,26 @@
         "properties": {
           "name": {
             "maxLength": 80,
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "isUnit": {
             "type": "boolean"
+          },
+          "inventoryItemId": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "isWet": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },

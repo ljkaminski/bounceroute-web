@@ -3,7 +3,7 @@ using BounceRoute.Api.Domain;
 
 namespace BounceRoute.Api.Contracts;
 
-public sealed record BookingItemDto(int Id, string Name, bool IsUnit, bool IsLoaded);
+public sealed record BookingItemDto(int Id, string Name, bool IsUnit, bool IsLoaded, int? InventoryItemId, bool? IsWet);
 
 public sealed record JobScheduleDto(
 	int Id,
@@ -40,9 +40,13 @@ public sealed record SaveJobScheduleRequest(
 	[property: MaxLength(30)] string? Truck,
 	IReadOnlyList<int>? CrewMemberIds);
 
+// Either an inventory item (name and pay counting come from the catalog) or a one-off with a name.
+// IsWet is required for items that can go either way; ignored for the rest.
 public sealed record SaveBookingItemRequest(
-	[property: Required, MaxLength(80)] string Name,
-	bool IsUnit);
+	[property: MaxLength(80)] string? Name,
+	bool IsUnit,
+	int? InventoryItemId = null,
+	bool? IsWet = null);
 
 public sealed record SaveBookingRequest(
 	[property: Required, MaxLength(100)] string CustomerName,

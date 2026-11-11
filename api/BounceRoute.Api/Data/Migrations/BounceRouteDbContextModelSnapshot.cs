@@ -168,10 +168,16 @@ namespace BounceRoute.Api.Data.Migrations
                     b.Property<int>("BookingId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("InventoryItemId")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsLoaded")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsUnit")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool?>("IsWet")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")
@@ -182,6 +188,8 @@ namespace BounceRoute.Api.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BookingId");
+
+                    b.HasIndex("InventoryItemId");
 
                     b.ToTable("BookingItems");
                 });
@@ -495,6 +503,13 @@ namespace BounceRoute.Api.Data.Migrations
                         .HasForeignKey("BookingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("BounceRoute.Api.Domain.InventoryItem", "InventoryItem")
+                        .WithMany()
+                        .HasForeignKey("InventoryItemId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("InventoryItem");
                 });
 
             modelBuilder.Entity("BounceRoute.Api.Domain.Job", b =>

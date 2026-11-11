@@ -20,8 +20,8 @@ const job: JobCard = {
   cityStateZip: 'Greenville, NC 27858',
   surface: 'Grass',
   siteNotes: '',
-  units: [{ id: 1, name: 'Castle Combo', isUnit: true, isLoaded: false }],
-  extras: [{ id: 2, name: 'Generator', isUnit: false, isLoaded: false }],
+  units: [{ id: 1, name: 'Castle Combo', isUnit: true, isLoaded: false, inventoryItemId: null, isWet: null }],
+  extras: [{ id: 2, name: 'Generator', isUnit: false, isLoaded: false, inventoryItemId: null, isWet: null }],
   crew: [{ id: 1, name: 'Jordan Hale', initials: 'JH' }],
 }
 

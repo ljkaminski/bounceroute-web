@@ -104,7 +104,7 @@ public static class RouteEndpoints
 
 		item.IsLoaded = request.IsLoaded;
 		await db.SaveChangesAsync();
-		return TypedResults.Ok(new BookingItemDto(item.Id, item.Name, item.IsUnit, item.IsLoaded));
+		return TypedResults.Ok(BookingEndpoints.ToDto(item));
 	}
 
 	private static ValidationProblem CrewMemberProblem(string message) =>

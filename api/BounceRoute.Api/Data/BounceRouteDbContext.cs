@@ -46,7 +46,11 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 			job.HasOne(j => j.CompletedBy).WithMany().OnDelete(DeleteBehavior.SetNull);
 		});
 
-		model.Entity<BookingItem>(item => item.Property(i => i.Name).HasMaxLength(80));
+		model.Entity<BookingItem>(item =>
+		{
+			item.Property(i => i.Name).HasMaxLength(80);
+			item.HasOne(i => i.InventoryItem).WithMany().OnDelete(DeleteBehavior.Restrict);
+		});
 
 		model.Entity<InventoryItem>(item =>
 		{

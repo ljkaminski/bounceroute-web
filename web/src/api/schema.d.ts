@@ -1076,6 +1076,9 @@ export interface components {
             name: string;
             isUnit: boolean;
             isLoaded: boolean;
+            /** Format: int32 */
+            inventoryItemId: null | number;
+            isWet: null | boolean;
         };
         BookingSummaryDto: {
             /** Format: int32 */
@@ -1230,8 +1233,11 @@ export interface components {
             jobs: components["schemas"]["JobCardDto"][];
         };
         SaveBookingItemRequest: {
-            name: string;
+            name: null | string;
             isUnit: boolean;
+            /** Format: int32 */
+            inventoryItemId?: null | number;
+            isWet?: null | boolean;
         };
         SaveBookingRequest: {
             customerName: string;
