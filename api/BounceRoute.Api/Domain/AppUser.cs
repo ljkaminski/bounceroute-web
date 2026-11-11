@@ -10,4 +10,8 @@ public sealed class AppUser : IdentityUser
 	public int? CrewMemberId { get; set; }
 
 	public CrewMember? CrewMember { get; set; }
+
+	// The owner turns an account off by locking it out with no end date.
+	// Failed-password lockouts end after a few minutes.
+	public bool IsDisabled => LockoutEnd == DateTimeOffset.MaxValue;
 }

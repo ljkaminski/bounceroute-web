@@ -26,6 +26,7 @@ builder.Services.AddIdentityCore<AppUser>(options =>
 	.AddRoles<IdentityRole>()
 	.AddEntityFrameworkStores<BounceRouteDbContext>()
 	.AddSignInManager()
+	.AddDefaultTokenProviders()
 	.AddClaimsPrincipalFactory<AppClaimsFactory>();
 
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme).AddIdentityCookies();
@@ -50,6 +51,9 @@ builder.Services.ConfigureApplicationCookie(options =>
 	};
 });
 builder.Services.AddAuthorization(Policies.Add);
+
+// How soon a role change, disable, or password reset reaches someone who is already signed in.
+builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.FromMinutes(1));
 
 // Slows down password guessing from one address; account lockout covers guessing one account.
 builder.Services.AddRateLimiter(options =>
@@ -95,6 +99,7 @@ app.MapAuthEndpoints();
 app.MapRouteEndpoints();
 app.MapBookingEndpoints();
 app.MapCrewEndpoints();
+app.MapUserEndpoints();
 
 // The build also starts this app to write the OpenAPI file; it must not touch the database then.
 var generatingOpenApi = Assembly.GetEntryAssembly()?.GetName().Name == "GetDocument.Insider";

@@ -34,7 +34,9 @@ public static class AuthEndpoints
 
 		var result = await signIn.PasswordSignInAsync(user, request.Password, isPersistent: true, lockoutOnFailure: true);
 		if (result.IsLockedOut)
-			return Unauthorized("Too many failed attempts. Try again in a few minutes.");
+			return Unauthorized(user.IsDisabled
+				? "This account is turned off. Ask the owner to turn it back on."
+				: "Too many failed attempts. Try again in a few minutes.");
 		if (!result.Succeeded)
 			return Unauthorized("Email or password is incorrect.");
 
