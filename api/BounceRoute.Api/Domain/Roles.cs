@@ -1,15 +1,23 @@
 namespace BounceRoute.Api.Domain;
 
-public static class Roles
+public enum UserRole
 {
 	// Everything, including managing accounts.
-	public const string Owner = "Owner";
+	Owner,
 
 	// Bookings, scheduling, crew, and pay.
-	public const string Office = "Office";
+	Office,
 
 	// Their own jobs and their own units.
-	public const string Crew = "Crew";
+	Crew
+}
+
+// Identity stores roles by name; these keep the names in one place.
+public static class Roles
+{
+	public const string Owner = nameof(UserRole.Owner);
+	public const string Office = nameof(UserRole.Office);
+	public const string Crew = nameof(UserRole.Crew);
 
 	public static readonly string[] All = [Owner, Office, Crew];
 }

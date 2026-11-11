@@ -1,8 +1,13 @@
 using System.Net.Http.Json;
+using BounceRoute.Api.Contracts;
+using BounceRoute.Api.Data;
+using BounceRoute.Api.Domain;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
 
 namespace BounceRoute.Api.Tests;
@@ -24,6 +29,24 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 	{
 		await base.DisposeAsync();
 		await database.DisposeAsync();
+	}
+
+	public const string Password = "test-password-123";
+
+	// Creates an account with a unique email and returns a client already signed in as it.
+	public async Task<HttpClient> SignedInClientAsync(string role, int? crewMemberId = null)
+	{
+		var email = $"{role.ToLowerInvariant()}-{Guid.NewGuid():N}@example.com";
+		await using (var scope = Services.CreateAsyncScope())
+		{
+			var users = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+			await AccountSeed.CreateAsync(users, email, Password, $"Test {role}", role, crewMemberId);
+		}
+
+		var client = CreateClient();
+		var response = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest(email, Password), Json);
+		response.EnsureSuccessStatusCode();
+		return client;
 	}
 
 	protected override void ConfigureWebHost(IWebHostBuilder builder)
