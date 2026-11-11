@@ -1,9 +1,10 @@
 using BounceRoute.Api.Domain;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BounceRoute.Api.Data;
 
-public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> options) : DbContext(options)
+public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> options) : IdentityDbContext<AppUser>(options)
 {
 	public DbSet<Booking> Bookings => Set<Booking>();
 
@@ -17,6 +18,8 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 
 	protected override void OnModelCreating(ModelBuilder model)
 	{
+		base.OnModelCreating(model);
+
 		model.HasSequence<int>("job_numbers").StartsAt(1001);
 
 		model.Entity<Booking>(booking =>
@@ -48,6 +51,13 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 			crew.Property(c => c.Name).HasMaxLength(80);
 			crew.Property(c => c.Initials).HasMaxLength(3);
 			crew.Property(c => c.Role).HasMaxLength(50);
+		});
+
+		model.Entity<AppUser>(user =>
+		{
+			user.Property(u => u.DisplayName).HasMaxLength(80);
+			user.HasOne(u => u.CrewMember).WithMany().OnDelete(DeleteBehavior.SetNull);
+			user.HasIndex(u => u.CrewMemberId).IsUnique();
 		});
 
 		model.Entity<JobAssignment>(assignment =>

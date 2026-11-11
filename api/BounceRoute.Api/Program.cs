@@ -1,13 +1,25 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
 using BounceRoute.Api.Data;
+using BounceRoute.Api.Domain;
 using BounceRoute.Api.Endpoints;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<BounceRouteDbContext>(options =>
 	options.UseNpgsql(builder.Configuration.GetConnectionString("BounceRoute")));
+
+builder.Services.AddIdentityCore<AppUser>(options =>
+	{
+		options.User.RequireUniqueEmail = true;
+		options.Password.RequiredLength = 10;
+		options.Password.RequireNonAlphanumeric = false;
+		options.Lockout.MaxFailedAccessAttempts = 5;
+	})
+	.AddRoles<IdentityRole>()
+	.AddEntityFrameworkStores<BounceRouteDbContext>();
 
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(services => new BusinessClock(
