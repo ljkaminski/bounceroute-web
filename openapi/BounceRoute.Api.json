@@ -5,6 +5,36 @@
     "version": "1.0.0"
   },
   "paths": {
+    "/api/route/plan": {
+      "get": {
+        "tags": [
+          "Route"
+        ],
+        "summary": "Each truck's day: drive and setup time per stop, when it runs late, and when the truck is done.",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutePlanDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/me/units": {
       "get": {
         "tags": [
@@ -2006,6 +2036,68 @@
           }
         }
       },
+      "PlannedStopDto": {
+        "required": [
+          "jobId",
+          "type",
+          "customerName",
+          "street",
+          "scheduledAt",
+          "driveMinutesBefore",
+          "arriveAt",
+          "startAt",
+          "finishAt",
+          "workMinutes",
+          "minutesLate"
+        ],
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "type": {
+            "$ref": "#/components/schemas/JobType"
+          },
+          "customerName": {
+            "type": "string"
+          },
+          "street": {
+            "type": "string"
+          },
+          "scheduledAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "driveMinutesBefore": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "arriveAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "workMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "minutesLate": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "ResetPasswordRequest": {
         "required": [
           "newPassword"
@@ -2032,6 +2124,33 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/JobCardDto"
+            }
+          }
+        }
+      },
+      "RoutePlanDto": {
+        "required": [
+          "date",
+          "mapsConfigured",
+          "shopAddressSet",
+          "trucks"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "mapsConfigured": {
+            "type": "boolean"
+          },
+          "shopAddressSet": {
+            "type": "boolean"
+          },
+          "trucks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TruckPlanDto"
             }
           }
         }
@@ -2344,6 +2463,59 @@
           "Inside"
         ]
       },
+      "TruckPlanDto": {
+        "required": [
+          "truck",
+          "leaveShopAt",
+          "doneAt",
+          "backAtShopAt",
+          "workMinutes",
+          "driveMinutes",
+          "driveTimesComplete",
+          "stops"
+        ],
+        "type": "object",
+        "properties": {
+          "truck": {
+            "type": "string"
+          },
+          "leaveShopAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "doneAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "backAtShopAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "workMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "driveMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "driveTimesComplete": {
+            "type": "boolean"
+          },
+          "stops": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlannedStopDto"
+            }
+          }
+        }
+      },
       "UnitTotalsReport": {
         "required": [
           "from",
@@ -2457,13 +2629,13 @@
   },
   "tags": [
     {
+      "name": "Route"
+    },
+    {
       "name": "Crew"
     },
     {
       "name": "Auth"
-    },
-    {
-      "name": "Route"
     },
     {
       "name": "Bookings"

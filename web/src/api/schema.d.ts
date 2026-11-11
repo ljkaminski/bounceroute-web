@@ -4,6 +4,44 @@
  */
 
 export interface paths {
+    "/api/route/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Each truck's day: drive and setup time per stop, when it runs late, and when the truck is done. */
+        get: {
+            parameters: {
+                query?: {
+                    date?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RoutePlanDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me/units": {
         parameters: {
             query?: never;
@@ -1580,6 +1618,27 @@ export interface components {
             email: string;
             password: string;
         };
+        PlannedStopDto: {
+            /** Format: int32 */
+            jobId: number;
+            type: components["schemas"]["JobType"];
+            customerName: string;
+            street: string;
+            /** Format: date-time */
+            scheduledAt: string;
+            /** Format: int32 */
+            driveMinutesBefore: null | number;
+            /** Format: date-time */
+            arriveAt: string;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            finishAt: string;
+            /** Format: int32 */
+            workMinutes: number;
+            /** Format: int32 */
+            minutesLate: number;
+        };
         ResetPasswordRequest: {
             newPassword: string;
         };
@@ -1587,6 +1646,13 @@ export interface components {
             /** Format: date */
             date: string;
             jobs: components["schemas"]["JobCardDto"][];
+        };
+        RoutePlanDto: {
+            /** Format: date */
+            date: string;
+            mapsConfigured: boolean;
+            shopAddressSet: boolean;
+            trucks: components["schemas"]["TruckPlanDto"][];
         };
         SaveBookingItemRequest: {
             name: null | string;
@@ -1652,6 +1718,21 @@ export interface components {
         };
         /** @enum {unknown} */
         Surface: "Grass" | "Concrete" | "Gravel" | "Inside";
+        TruckPlanDto: {
+            truck: string;
+            /** Format: date-time */
+            leaveShopAt: null | string;
+            /** Format: date-time */
+            doneAt: string;
+            /** Format: date-time */
+            backAtShopAt: null | string;
+            /** Format: int32 */
+            workMinutes: number;
+            /** Format: int32 */
+            driveMinutes: number;
+            driveTimesComplete: boolean;
+            stops: components["schemas"]["PlannedStopDto"][];
+        };
         UnitTotalsReport: {
             /** Format: date */
             from: string;

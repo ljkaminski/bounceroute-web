@@ -1,0 +1,136 @@
+using System.Net.Http.Json;
+using BounceRoute.Api.Contracts;
+using BounceRoute.Api.Domain;
+using BounceRoute.Api.Maps;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace BounceRoute.Api.Tests;
+
+// Every address is somewhere and every drive takes 15 minutes, so the expected times are easy to check.
+public sealed class FakeMaps : IMaps
+{
+	public List<string> Lookups { get; } = [];
+
+	public bool IsConfigured => true;
+
+	public Task<GeoPoint?> GeocodeAsync(string address, CancellationToken cancellationToken = default)
+	{
+		Lookups.Add(address);
+		return Task.FromResult<GeoPoint?>(address.Contains("Nowhere") ? null : new GeoPoint(35, -80.5));
+	}
+
+	public Task<IReadOnlyList<int?>> DriveMinutesAsync(IReadOnlyList<GeoPoint> points, CancellationToken cancellationToken = default) =>
+		Task.FromResult<IReadOnlyList<int?>>([.. Enumerable.Repeat<int?>(15, points.Count - 1)]);
+}
+
+public sealed class MapsApiFactory : ApiFactory
+{
+	public FakeMaps Maps { get; } = new();
+
+	protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
+	{
+		base.ConfigureWebHost(builder);
+		builder.ConfigureTestServices(services => services.AddSingleton<IMaps>(Maps));
+	}
+}
+
+public sealed class RoutePlanTests : IAsyncLifetime
+{
+	private readonly MapsApiFactory factory = new();
+	private HttpClient owner = null!;
+
+	public async Task InitializeAsync()
+	{
+		await factory.InitializeAsync();
+		owner = await factory.SignedInClientAsync(Roles.Owner);
+		await owner.PutAsJsonAsync("/api/settings", new SaveCompanySettingsRequest("Test", null, null, "1 Shop Rd, Monroe, NC"), ApiFactory.Json);
+	}
+
+	public Task DisposeAsync() => factory.DisposeAsync();
+
+	[Fact]
+	public async Task Plan_adds_drive_and_setup_time_and_flags_late_stops()
+	{
+		var combo = await ItemAsync(InventoryCategory.Combo);     // 30 min
+		var slide = await ItemAsync(InventoryCategory.WaterSlide); // 45 min
+		await BookAsync("A", "09:00", "Truck 1", combo);
+		await BookAsync("B", "09:20", "Truck 1", slide);
+
+		var plan = await PlanAsync();
+
+		var truck = Assert.Single(plan.Trucks);
+		Assert.True(truck.DriveTimesComplete);
+		Assert.Equal(At("08:45"), truck.LeaveShopAt);          // 15 min drive to the first stop
+		var (first, second) = (truck.Stops[0], truck.Stops[1]);
+		Assert.Equal((At("09:00"), At("09:30")), (first.StartAt, first.FinishAt));
+		Assert.Equal(At("09:45"), second.ArriveAt);           // 9:30 finish + 15 min drive
+		Assert.Equal(25, second.MinutesLate);                 // scheduled 9:20
+		Assert.Equal(At("10:30"), truck.DoneAt);              // 9:45 + 45 min slide
+		Assert.Equal(At("10:45"), truck.BackAtShopAt);
+		Assert.Equal((75, 45), (truck.WorkMinutes, truck.DriveMinutes));
+	}
+
+	[Fact]
+	public async Task Early_crews_wait_for_the_scheduled_time()
+	{
+		var combo = await ItemAsync(InventoryCategory.Combo);
+		await BookAsync("A", "09:00", "Truck 1", combo);
+		await BookAsync("B", "13:00", "Truck 1", combo);
+
+		var second = (await PlanAsync()).Trucks[0].Stops[1];
+
+		Assert.Equal(At("09:45"), second.ArriveAt);
+		Assert.Equal(At("13:00"), second.StartAt);
+		Assert.Equal(0, second.MinutesLate);
+	}
+
+	[Fact]
+	public async Task Each_truck_gets_its_own_plan()
+	{
+		var combo = await ItemAsync(InventoryCategory.Combo);
+		await BookAsync("A", "09:00", "Truck 2", combo);
+		await BookAsync("B", "09:00", "Truck 1", combo);
+
+		var plan = await PlanAsync();
+
+		Assert.Equal(["Truck 1", "Truck 2"], plan.Trucks.Select(truck => truck.Truck));
+		Assert.All(plan.Trucks, truck => Assert.Equal(0, truck.Stops[0].MinutesLate));
+	}
+
+	[Fact]
+	public async Task Addresses_are_looked_up_once_and_unfound_ones_are_not_retried()
+	{
+		var combo = await ItemAsync(InventoryCategory.Combo);
+		await BookAsync("A", "09:00", "Truck 1", combo);
+		await BookAsync("B", "11:00", "Truck 1", combo, street: "1 Nowhere Ln");
+
+		var plan = await PlanAsync();
+		await PlanAsync();
+
+		Assert.False(plan.Trucks[0].DriveTimesComplete);
+		Assert.Equal(1, factory.Maps.Lookups.Count(address => address.Contains("Nowhere")));
+		Assert.Equal(1, factory.Maps.Lookups.Count(address => address.StartsWith("1 A St")));
+	}
+
+	private static readonly string Day = "2036-09-06";
+
+	private static DateTimeOffset At(string time) => DateTimeOffset.Parse($"{Day}T{time}:00-04:00");
+
+	private async Task<RoutePlanDto> PlanAsync() => await (await owner.GetAsync($"/api/route/plan?date={Day}")).ReadAsync<RoutePlanDto>();
+
+	private async Task<InventoryItemDto> ItemAsync(InventoryCategory category) =>
+		await (await owner.PostAsJsonAsync("/api/inventory",
+			InventoryTests.Item($"Plan {Guid.NewGuid():N}", quantity: 5) with { Category = category, WaterUse = WaterUse.DryOnly }, ApiFactory.Json))
+			.ReadAsync<InventoryItemDto>();
+
+	private async Task BookAsync(string customer, string time, string truck, InventoryItemDto item, string? street = null)
+	{
+		var setup = new SaveJobScheduleRequest(At(time), truck, []);
+		// Pickup on another day so only setups are on this route.
+		var pickup = setup with { ScheduledAt = setup.ScheduledAt.AddDays(1) };
+		var response = await owner.PostAsJsonAsync("/api/bookings", new SaveBookingRequest(
+			customer, null, street ?? $"1 {customer} St", "Monroe, NC 28110", Surface.Grass, null, setup, pickup, [new(null, false, item.Id)]), ApiFactory.Json);
+		response.EnsureSuccessStatusCode();
+	}
+}

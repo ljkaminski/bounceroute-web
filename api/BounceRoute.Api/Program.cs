@@ -112,6 +112,7 @@ app.MapOpenApi();
 app.MapHealthChecks("/health");
 app.MapAuthEndpoints();
 app.MapRouteEndpoints();
+app.MapRoutePlanEndpoints();
 app.MapBookingEndpoints();
 app.MapCrewEndpoints();
 app.MapInventoryEndpoints();
