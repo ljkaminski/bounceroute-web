@@ -13,6 +13,7 @@ import { BookingFormPage } from './pages/BookingFormPage'
 import { BookingsPage } from './pages/BookingsPage'
 import { CrewPage } from './pages/CrewPage'
 import { JobPage } from './pages/JobPage'
+import { ChangePasswordPage } from './pages/ChangePasswordPage'
 import { LoginPage } from './pages/LoginPage'
 import { MyUnitsPage } from './pages/MyUnitsPage'
 import { RoutePage } from './pages/RoutePage'
@@ -44,6 +45,7 @@ const router = createBrowserRouter([
           { index: true, element: <RoutePage /> },
           { path: 'jobs/:id', element: <JobPage /> },
           { path: 'me/units', element: <MyUnitsPage /> },
+          { path: 'me/password', element: <ChangePasswordPage /> },
           {
             element: <RequireRole roles={['Owner', 'Office']} />,
             children: [

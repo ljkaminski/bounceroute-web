@@ -45,7 +45,9 @@ export function Layout() {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-3 text-sm">
-            <span className="text-slate-300">{me?.displayName}</span>
+            <NavLink to="/me/password" title="Change password" className="text-slate-300 hover:text-white">
+              {me?.displayName}
+            </NavLink>
             <button className="text-slate-400 hover:text-white" onClick={() => logout.mutate()} disabled={logout.isPending}>
               Sign out
             </button>

@@ -146,3 +146,10 @@ export function useResetPassword() {
       unwrap(api.POST('/api/users/{id}/password', { params: { path: { id } }, body: { newPassword } })),
   })
 }
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (body: { currentPassword: string; newPassword: string }) =>
+      unwrap(api.POST('/api/auth/password', { body })),
+  })
+}
