@@ -44,6 +44,7 @@ Changing a request or response type in C# changes the OpenAPI file, which change
 - A **booking** is one customer rental: address, ground surface, site notes, and the **items** going out. Items are picked from inventory (with wet or dry chosen when a unit can go either way) or typed in as one-offs.
 - Every booking has exactly two **jobs**: a setup and a pickup. Each job has its own time, truck, and crew (via **job assignments**).
 - An item is either a **unit** (counts toward pay) or an **extra** like a generator (doesn't). Booked items copy their name and pay rule from inventory, so editing the catalog later doesn't rewrite old bookings.
+- **Route plans.** The owner sets setup minutes per unit type (any unit can override). For each truck, the app adds up time on site and real drive times between stops (OpenRouteService, one matrix request per truck, cached for a day) to show when to leave the shop, which stops will run late, and when the truck will be done. Addresses are geocoded once and re-checked only when edited. Without a map key the plan still works, with setup time only.
 - **No double-booking.** A booking holds its items from setup until pickup. Saving is refused if overlapping bookings already use every copy the company owns. Saves run under a Postgres advisory lock so two people can't take the last unit at the same moment, and a test proves that race is caught.
 - Pay totals = units on *completed* jobs a crew member was assigned to. The "weekend" runs Friday through Monday, since Monday pickups belong to the weekend.
 - Job times are stored in UTC. A day's route is computed in the business time zone (`Business:TimeZone`, default `America/New_York`), so an 11 PM job stays on the right day and days with DST changes are handled. Tests cover both.
@@ -95,6 +96,12 @@ npm run dev
 
 OpenAPI JSON is served at http://localhost:5125/openapi/v1.json.
 
+Drive times are optional. To turn them on, get a free key at [openrouteservice.org](https://openrouteservice.org/dev/#/signup) and store it outside the repo:
+
+```bash
+dotnet user-secrets set "Maps:OpenRouteServiceKey" "<your key>" --project api/BounceRoute.Api
+```
+
 Demo sign-ins (Development only). All three use the same password, with no symbols so it types the same on any keyboard:
 
 | Email | Password | Role |
@@ -145,6 +152,7 @@ openapi/         generated OpenAPI document (committed)
 - [ ] Connect the .NET MAUI crew app to this API, keeping SQLite as an offline cache
 - [ ] Text crews when their schedule changes
 - [x] Inventory with quantities, wet/dry, and double-booking prevention
+- [x] Route plans with setup and drive times
 - [ ] Calendar view of what's booked when
 
 All names, addresses, and phone numbers in the seed data and screenshots are made up.
