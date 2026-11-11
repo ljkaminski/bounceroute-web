@@ -45,6 +45,8 @@ Changing a request or response type in C# changes the OpenAPI file, which change
 - Every booking has exactly two **jobs**: a setup and a pickup. Each job has its own time, truck, and crew (via **job assignments**).
 - An item is either a **unit** (counts toward pay) or an **extra** like a generator (doesn't). Booked items copy their name and pay rule from inventory, so editing the catalog later doesn't rewrite old bookings.
 - **Route plans.** The owner sets setup minutes per unit type (any unit can override). For each truck, the app adds up time on site and real drive times between stops (OpenRouteService, one matrix request per truck, cached for a day) to show when to leave the shop, which stops will run late, and when the truck will be done. Addresses are geocoded once and re-checked only when edited. Without a map key the plan still works, with setup time only.
+- **Route optimizer.** Bookings record when the party starts and ends. The office picks which trucks go out each day, and each truck has a capacity in pieces (each item says how many pieces it takes; a 30 ft slide is 2). When a day is opened, the API sends its stops to OpenRouteService's optimizer (VROOM) as a vehicle-routing problem with time windows: setup finished 10 minutes before the party, pickup within 2 hours after it ends, trucks starting and ending at the shop. The answer is re-planned with the same timing code as the current plan, and offered only if it's better (fewer late stops, or everyone back 15+ minutes sooner). One "Use this plan" call applies it, guarded by a fingerprint of every input so a stale suggestion can't overwrite newer changes. It can be switched off in Settings for fully manual planning.
+- **Map failures aren't "not found".** Address lookups report found, not found, or failed (service down, quota used up). Only real not-founds wait for the address to be edited; failures are retried the next time a plan needs them.
 - **No double-booking.** A booking holds its items from setup until pickup. Saving is refused if overlapping bookings already use every copy the company owns. Saves run under a Postgres advisory lock so two people can't take the last unit at the same moment, and a test proves that race is caught.
 - Pay totals = units on *completed* jobs a crew member was assigned to. The "weekend" runs Friday through Monday, since Monday pickups belong to the weekend.
 - Job times are stored in UTC. A day's route is computed in the business time zone (`Business:TimeZone`, default `America/New_York`), so an 11 PM job stays on the right day and days with DST changes are handled. Tests cover both.
@@ -153,6 +155,7 @@ openapi/         generated OpenAPI document (committed)
 - [ ] Text crews when their schedule changes
 - [x] Inventory with quantities, wet/dry, and double-booking prevention
 - [x] Route plans with setup and drive times
+- [x] Suggested routes: which truck takes which stop, and when
 - [ ] Calendar view of what's booked when
 
 All names, addresses, and phone numbers in the seed data and screenshots are made up.
