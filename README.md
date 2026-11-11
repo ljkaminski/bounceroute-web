@@ -40,6 +40,7 @@ Changing a request or response type in C# changes the OpenAPI file, which change
 ## How the data fits together
 
 - **Inventory** is what the company owns: category, how many copies, size, wet/dry use, power, and price.
+- Each inventory item can have a **photo**, shown to the office when booking and to crews on their loading list. The browser shrinks photos to 1600px JPEG before upload (a 4 MB phone photo becomes ~200 KB). The server checks the file's bytes to accept only real JPEG/PNG/WebP, and stores photos in Postgres rather than on disk, since free hosts wipe disks on restart. Photo URLs carry a version, so browsers cache them until the photo changes.
 - A **booking** is one customer rental: address, ground surface, site notes, and the **items** going out. Items are picked from inventory (with wet or dry chosen when a unit can go either way) or typed in as one-offs.
 - Every booking has exactly two **jobs**: a setup and a pickup. Each job has its own time, truck, and crew (via **job assignments**).
 - An item is either a **unit** (counts toward pay) or an **extra** like a generator (doesn't). Booked items copy their name and pay rule from inventory, so editing the catalog later doesn't rewrite old bookings.
