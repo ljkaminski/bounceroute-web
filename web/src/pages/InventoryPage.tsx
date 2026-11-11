@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { ApiError, type InventoryCategory, type InventoryItem, type SaveInventoryItemRequest, type WaterUse } from '../api/client'
-import { useImportInventory, useInventory, useRemoveInventoryPhoto, useSaveInventoryItem, useUploadInventoryPhoto } from '../api/hooks'
+import {
+  useImportInventory,
+  useInventory,
+  useRemoveInventoryPhoto,
+  useSaveInventoryItem,
+  useSetupTimes,
+  useUploadInventoryPhoto,
+} from '../api/hooks'
 import { EmptyState, ErrorBox, Loading } from '../components/Feedback'
 import { UnitPhoto } from '../components/UnitPhoto'
 import { categoryLabels, categoryOrder, groupByCategory, price, sizeText, waterUseLabels } from '../lib/inventory'
@@ -142,10 +149,12 @@ const blankItem: SaveInventoryItemRequest = {
 
 function ItemForm({ item, onDone }: { item?: InventoryItem; onDone: () => void }) {
   const save = useSaveInventoryItem(item?.id)
+  const setupTimes = useSetupTimes()
   const [form, setForm] = useState<SaveInventoryItemRequest>(() => (item ? { ...item } : blankItem))
   const set = <K extends keyof SaveInventoryItemRequest>(key: K, value: SaveInventoryItemRequest[K]) => setForm((f) => ({ ...f, [key]: value }))
   const number = (value: string) => (value === '' ? null : Number(value))
   const nameError = save.error instanceof ApiError ? save.error.fieldErrors.Name?.join(' ') : undefined
+  const typeMinutes = setupTimes.data?.find((time) => time.category === form.category)?.minutes
 
   return (
     <form
@@ -199,7 +208,13 @@ function ItemForm({ item, onDone }: { item?: InventoryItem; onDone: () => void }
           ))}
         </div>
       </fieldset>
-      <label className="sm:col-span-2">
+      <label>
+        <span className="label">Setup minutes</span>
+        <input className="field" type="number" min={0} max={600} value={form.setupMinutes ?? ''}
+          placeholder={typeMinutes === undefined ? 'Type default' : `${typeMinutes} (type default)`}
+          onChange={(e) => set('setupMinutes', number(e.target.value))} />
+      </label>
+      <label>
         <span className="label">Notes</span>
         <input className="field" maxLength={500} value={form.notes ?? ''} onChange={(e) => set('notes', e.target.value)} />
       </label>

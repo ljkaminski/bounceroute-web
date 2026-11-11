@@ -4,6 +4,7 @@ import {
   unwrap,
   type CreateUserRequest,
   type SaveBookingRequest,
+  type Schemas,
   type SaveInventoryItemRequest,
   type UpdateUserRequest,
 } from './client'
@@ -19,6 +20,8 @@ export const keys = {
   myUnits: (from: string, to: string) => ['my-units', from, to] as const,
   users: ['users'] as const,
   settings: ['settings'] as const,
+  setupTimes: ['setup-times'] as const,
+  plan: (date: string) => ['plan', date] as const,
   inventory: (includeInactive: boolean) => ['inventory', includeInactive] as const,
   availability: (setupAt: string, pickupAt: string, excludeBookingId?: number) =>
     ['availability', setupAt, pickupAt, excludeBookingId] as const,
@@ -77,6 +80,19 @@ export const useSettings = () =>
     queryKey: keys.settings,
     queryFn: () => unwrap(api.GET('/api/settings')),
     staleTime: 5 * 60_000,
+  })
+
+export const useSetupTimes = (enabled = true) =>
+  useQuery({
+    queryKey: keys.setupTimes,
+    queryFn: () => unwrap(api.GET('/api/settings/setup-times')),
+    enabled,
+  })
+
+export const useRoutePlan = (date: string) =>
+  useQuery({
+    queryKey: keys.plan(date),
+    queryFn: () => unwrap(api.GET('/api/route/plan', { params: { query: { date } } })),
   })
 
 export const useUsers = () =>
@@ -212,7 +228,7 @@ export function useImportInventory() {
 export function useSaveSettings() {
   const refresh = useRefreshAll()
   return useMutation({
-    mutationFn: (body: { companyName: string; defaultCityStateZip: string; phone: string }) =>
+    mutationFn: (body: { companyName: string; defaultCityStateZip: string; phone: string; shopAddress: string }) =>
       unwrap(api.PUT('/api/settings', { body })),
     onSuccess: refresh,
   })
@@ -230,6 +246,14 @@ export function useRemoveInventoryPhoto() {
   const refresh = useRefreshAll()
   return useMutation({
     mutationFn: (itemId: number) => unwrap(api.DELETE('/api/inventory/{id}/photo', { params: { path: { id: itemId } } })),
+    onSuccess: refresh,
+  })
+}
+
+export function useSaveSetupTimes() {
+  const refresh = useRefreshAll()
+  return useMutation({
+    mutationFn: (body: Schemas['CategorySetupTimeDto'][]) => unwrap(api.PUT('/api/settings/setup-times', { body })),
     onSuccess: refresh,
   })
 }
