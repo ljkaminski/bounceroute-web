@@ -18,6 +18,8 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 
 	public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
 
+	public DbSet<CompanySettings> CompanySettings => Set<CompanySettings>();
+
 	protected override void OnModelCreating(ModelBuilder model)
 	{
 		base.OnModelCreating(model);
@@ -50,6 +52,15 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 		{
 			item.Property(i => i.Name).HasMaxLength(80);
 			item.HasOne(i => i.InventoryItem).WithMany().OnDelete(DeleteBehavior.Restrict);
+		});
+
+		model.Entity<CompanySettings>(settings =>
+		{
+			settings.Property(s => s.Id).ValueGeneratedNever();
+			settings.Property(s => s.CompanyName).HasMaxLength(100);
+			settings.Property(s => s.DefaultCityStateZip).HasMaxLength(100);
+			settings.Property(s => s.Phone).HasMaxLength(20);
+			settings.ToTable(table => table.HasCheckConstraint("CK_CompanySettings_Single", "\"Id\" = 1"));
 		});
 
 		model.Entity<InventoryItem>(item =>

@@ -106,3 +106,20 @@ public sealed class UserTests(ApiFactory factory) : IClassFixture<ApiFactory>, I
 		await (await owner.PostAsJsonAsync("/api/crew", new SaveCrewMemberRequest(name, null, "Crew"), ApiFactory.Json))
 			.ReadAsync<CrewMemberDto>();
 }
+
+public sealed class SettingsTests(ApiFactory factory) : IClassFixture<ApiFactory>
+{
+	[Fact]
+	public async Task Owner_sets_company_details_that_everyone_can_read()
+	{
+		var owner = await factory.SignedInClientAsync(Roles.Owner);
+		var crew = await factory.SignedInClientAsync(Roles.Crew);
+
+		await owner.PutAsJsonAsync("/api/settings", new SaveCompanySettingsRequest("Test Rentals", "Monroe, NC 28110", null), ApiFactory.Json);
+
+		var seen = await (await crew.GetAsync("/api/settings")).ReadAsync<CompanySettingsDto>();
+		Assert.Equal(new CompanySettingsDto("Test Rentals", "Monroe, NC 28110", ""), seen);
+		Assert.Equal(HttpStatusCode.Forbidden,
+			(await crew.PutAsJsonAsync("/api/settings", new SaveCompanySettingsRequest("Hijack", null, null), ApiFactory.Json)).StatusCode);
+	}
+}

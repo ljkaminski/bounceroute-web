@@ -194,6 +194,34 @@ namespace BounceRoute.Api.Data.Migrations
                     b.ToTable("BookingItems");
                 });
 
+            modelBuilder.Entity("BounceRoute.Api.Domain.CompanySettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("DefaultCityStateZip")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CompanySettings", t =>
+                        {
+                            t.HasCheckConstraint("CK_CompanySettings_Single", "\"Id\" = 1");
+                        });
+                });
+
             modelBuilder.Entity("BounceRoute.Api.Domain.CrewMember", b =>
                 {
                     b.Property<int>("Id")

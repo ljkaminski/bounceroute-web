@@ -968,6 +968,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CompanySettingsDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveCompanySettingsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CompanySettingsDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users": {
         parameters: {
             query?: never;
@@ -1197,6 +1255,11 @@ export interface components {
             currentPassword: string;
             newPassword: string;
         };
+        CompanySettingsDto: {
+            companyName: string;
+            defaultCityStateZip: string;
+            phone: string;
+        };
         CompleteJobRequest: {
             /** Format: int32 */
             crewMemberId: null | number;
@@ -1363,6 +1426,11 @@ export interface components {
             setup: components["schemas"]["SaveJobScheduleRequest"];
             pickup: components["schemas"]["SaveJobScheduleRequest"];
             items: components["schemas"]["SaveBookingItemRequest"][];
+        };
+        SaveCompanySettingsRequest: {
+            companyName: null | string;
+            defaultCityStateZip: null | string;
+            phone: null | string;
         };
         SaveCrewMemberRequest: {
             name: string;

@@ -890,6 +890,52 @@
         }
       }
     },
+    "/api/settings": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanySettingsDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Settings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveCompanySettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanySettingsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/users": {
       "get": {
         "tags": [
@@ -1201,6 +1247,25 @@
             "type": "string"
           },
           "newPassword": {
+            "type": "string"
+          }
+        }
+      },
+      "CompanySettingsDto": {
+        "required": [
+          "companyName",
+          "defaultCityStateZip",
+          "phone"
+        ],
+        "type": "object",
+        "properties": {
+          "companyName": {
+            "type": "string"
+          },
+          "defaultCityStateZip": {
+            "type": "string"
+          },
+          "phone": {
             "type": "string"
           }
         }
@@ -1835,6 +1900,37 @@
           }
         }
       },
+      "SaveCompanySettingsRequest": {
+        "required": [
+          "companyName",
+          "defaultCityStateZip",
+          "phone"
+        ],
+        "type": "object",
+        "properties": {
+          "companyName": {
+            "maxLength": 100,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "defaultCityStateZip": {
+            "maxLength": 100,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "phone": {
+            "maxLength": 20,
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "SaveCrewMemberRequest": {
         "required": [
           "name",
@@ -2130,6 +2226,9 @@
     },
     {
       "name": "Inventory"
+    },
+    {
+      "name": "Settings"
     },
     {
       "name": "Users"

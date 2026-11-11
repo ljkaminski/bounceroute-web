@@ -40,6 +40,12 @@ public static class DevSeed
 			Crew("Morgan Diaz", "Crew")
 		};
 		db.CrewMembers.AddRange(crew);
+		db.CompanySettings.Add(new CompanySettings
+		{
+			CompanyName = "Demo Party Rentals",
+			DefaultCityStateZip = "Greenville, NC 27858",
+			Phone = "(252) 555-0100"
+		});
 		var (jordan, riley, sam, casey, morgan) = (crew[0], crew[1], crew[2], crew[3], crew[4]);
 
 		InventoryItem Owned(string name, InventoryCategory category, bool isUnit, WaterUse water, int quantity, int? length, int? width, int? height, decimal price) => new()
