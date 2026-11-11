@@ -194,6 +194,62 @@ namespace BounceRoute.Api.Data.Migrations
                     b.ToTable("BookingItems");
                 });
 
+            modelBuilder.Entity("BounceRoute.Api.Domain.CategorySetupTime", b =>
+                {
+                    b.Property<string>("Category")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("Minutes")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Category");
+
+                    b.ToTable("CategorySetupTimes");
+
+                    b.HasData(
+                        new
+                        {
+                            Category = "BounceHouse",
+                            Minutes = 20
+                        },
+                        new
+                        {
+                            Category = "Combo",
+                            Minutes = 30
+                        },
+                        new
+                        {
+                            Category = "WaterSlide",
+                            Minutes = 45
+                        },
+                        new
+                        {
+                            Category = "ObstacleCourse",
+                            Minutes = 30
+                        },
+                        new
+                        {
+                            Category = "SlipNSlide",
+                            Minutes = 20
+                        },
+                        new
+                        {
+                            Category = "Game",
+                            Minutes = 15
+                        },
+                        new
+                        {
+                            Category = "Equipment",
+                            Minutes = 5
+                        },
+                        new
+                        {
+                            Category = "Other",
+                            Minutes = 10
+                        });
+                });
+
             modelBuilder.Entity("BounceRoute.Api.Domain.CompanySettings", b =>
                 {
                     b.Property<int>("Id")
@@ -299,6 +355,9 @@ namespace BounceRoute.Api.Data.Migrations
                         .HasColumnType("integer");
 
                     b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SetupMinutes")
                         .HasColumnType("integer");
 
                     b.Property<string>("WaterUse")

@@ -24,6 +24,7 @@ const job: JobCard = {
   units: [{ id: 1, name: 'Castle Combo', isUnit: true, isLoaded: false, inventoryItemId: null, isWet: null, photoUrl: null }],
   extras: [],
   crew: [{ id: 1, name: 'Jordan Hale', initials: 'JH' }],
+  workMinutes: 30,
 }
 
 const user = (role: CurrentUser['role']): CurrentUser => ({

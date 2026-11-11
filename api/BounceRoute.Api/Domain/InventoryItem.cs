@@ -29,6 +29,9 @@ public sealed class InventoryItem
 
 	public decimal? DailyPrice { get; set; }
 
+	// Overrides the type's setup time for this one unit (e.g. 30 ft slides take longer). Null uses the type's time.
+	public int? SetupMinutes { get; set; }
+
 	public string Notes { get; set; } = string.Empty;
 
 	// Bumped on every photo upload; null when there's no photo. Goes in the photo URL so browsers

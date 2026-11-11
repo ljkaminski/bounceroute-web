@@ -1,6 +1,7 @@
 using BounceRoute.Api.Contracts;
 using BounceRoute.Api.Data;
 using BounceRoute.Api.Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace BounceRoute.Api.Endpoints;
 
@@ -12,6 +13,11 @@ public static class SettingsEndpoints
 
 		settings.MapGet("/", GetSettings).RequireAuthorization();
 		settings.MapPut("/", SaveSettings).RequireAuthorization(Policies.Owner);
+
+		settings.MapGet("/setup-times", GetSetupTimes)
+			.WithSummary("Minutes to set up (or take down) one unit of each type.")
+			.RequireAuthorization(Policies.Office);
+		settings.MapPut("/setup-times", SaveSetupTimes).RequireAuthorization(Policies.Owner);
 	}
 
 	private static async Task<CompanySettingsDto> GetSettings(BounceRouteDbContext db) =>
@@ -31,6 +37,22 @@ public static class SettingsEndpoints
 		settings.Phone = request.Phone?.Trim() ?? string.Empty;
 		await db.SaveChangesAsync();
 		return ToDto(settings);
+	}
+
+	private static async Task<List<CategorySetupTimeDto>> GetSetupTimes(BounceRouteDbContext db) =>
+		[.. (await SetupTimes.LoadAsync(db)).Select(entry => new CategorySetupTimeDto(entry.Key, entry.Value))];
+
+	private static async Task<List<CategorySetupTimeDto>> SaveSetupTimes(List<CategorySetupTimeDto> times, BounceRouteDbContext db)
+	{
+		var saved = await db.CategorySetupTimes.ToDictionaryAsync(time => time.Category);
+		foreach (var time in times)
+		{
+			if (!saved.TryGetValue(time.Category, out var row))
+				db.CategorySetupTimes.Add(row = new CategorySetupTime { Category = time.Category });
+			row.Minutes = time.Minutes;
+		}
+		await db.SaveChangesAsync();
+		return await GetSetupTimes(db);
 	}
 
 	private static CompanySettingsDto ToDto(CompanySettings settings) =>

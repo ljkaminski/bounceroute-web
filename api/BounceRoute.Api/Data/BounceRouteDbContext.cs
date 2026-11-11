@@ -22,6 +22,8 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 
 	public DbSet<InventoryPhoto> InventoryPhotos => Set<InventoryPhoto>();
 
+	public DbSet<CategorySetupTime> CategorySetupTimes => Set<CategorySetupTime>();
+
 	protected override void OnModelCreating(ModelBuilder model)
 	{
 		base.OnModelCreating(model);
@@ -54,6 +56,13 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 		{
 			item.Property(i => i.Name).HasMaxLength(80);
 			item.HasOne(i => i.InventoryItem).WithMany().OnDelete(DeleteBehavior.Restrict);
+		});
+
+		model.Entity<CategorySetupTime>(time =>
+		{
+			time.HasKey(t => t.Category);
+			time.Property(t => t.Category).HasConversion<string>().HasMaxLength(20);
+			time.HasData(CategorySetupTime.Defaults.Select(entry => new CategorySetupTime { Category = entry.Key, Minutes = entry.Value }));
 		});
 
 		model.Entity<InventoryPhoto>(photo =>

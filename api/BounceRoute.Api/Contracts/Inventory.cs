@@ -17,7 +17,8 @@ public sealed record InventoryItemDto(
 	decimal? DailyPrice,
 	string Notes,
 	bool IsActive,
-	string? PhotoUrl);
+	string? PhotoUrl,
+	int? SetupMinutes);
 
 public sealed record SaveInventoryItemRequest(
 	[property: Required, MaxLength(80)] string Name,
@@ -31,7 +32,8 @@ public sealed record SaveInventoryItemRequest(
 	[property: Range(1, 100)] int? HeightFt,
 	[property: Range(0, 100000)] decimal? DailyPrice,
 	[property: MaxLength(500)] string? Notes,
-	bool IsActive = true);
+	bool IsActive = true,
+	[property: Range(0, 600)] int? SetupMinutes = null);
 
 public sealed record InventoryImportResult(int Created, int Updated);
 

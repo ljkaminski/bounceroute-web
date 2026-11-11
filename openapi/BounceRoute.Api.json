@@ -1055,6 +1055,62 @@
         }
       }
     },
+    "/api/settings/setup-times": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Minutes to set up (or take down) one unit of each type.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategorySetupTimeDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Settings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CategorySetupTimeDto"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategorySetupTimeDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/users": {
       "get": {
         "tags": [
@@ -1359,6 +1415,24 @@
           },
           "isComplete": {
             "type": "boolean"
+          }
+        }
+      },
+      "CategorySetupTimeDto": {
+        "required": [
+          "category",
+          "minutes"
+        ],
+        "type": "object",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/InventoryCategory"
+          },
+          "minutes": {
+            "maximum": 600,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -1679,7 +1753,8 @@
           "dailyPrice",
           "notes",
           "isActive",
-          "photoUrl"
+          "photoUrl",
+          "setupMinutes"
         ],
         "type": "object",
         "properties": {
@@ -1745,6 +1820,13 @@
               "null",
               "string"
             ]
+          },
+          "setupMinutes": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -1768,7 +1850,8 @@
           "siteNotes",
           "units",
           "extras",
-          "crew"
+          "crew",
+          "workMinutes"
         ],
         "type": "object",
         "properties": {
@@ -1848,6 +1931,10 @@
             "items": {
               "$ref": "#/components/schemas/CrewSummaryDto"
             }
+          },
+          "workMinutes": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -2180,6 +2267,15 @@
           "isActive": {
             "type": "boolean",
             "default": true
+          },
+          "setupMinutes": {
+            "maximum": 600,
+            "minimum": 0,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
           }
         }
       },

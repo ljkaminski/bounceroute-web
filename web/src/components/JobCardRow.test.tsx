@@ -23,6 +23,7 @@ const job: JobCard = {
   units: [{ id: 1, name: 'Castle Combo', isUnit: true, isLoaded: false, inventoryItemId: 4, isWet: true, photoUrl: null }],
   extras: [{ id: 2, name: 'Generator', isUnit: false, isLoaded: false, inventoryItemId: null, isWet: null, photoUrl: null }],
   crew: [{ id: 1, name: 'Jordan Hale', initials: 'JH' }],
+  workMinutes: 30,
 }
 
 it('shows the stop the way crews read it', () => {

@@ -41,7 +41,8 @@ public static class RouteEndpoints
 			.ToListAsync();
 
 		var nextUp = jobs.FirstOrDefault(job => job.Status != JobStatus.Done);
-		return new RouteDayDto(day, [.. jobs.Select(job => ToCard(job, isNextUp: job == nextUp))]);
+		var times = await SetupTimes.LoadAsync(db);
+		return new RouteDayDto(day, [.. jobs.Select(job => ToCard(job, times, isNextUp: job == nextUp))]);
 	}
 
 	private static async Task<Results<Ok<JobCardDto>, NotFound>> GetJob(int id, ClaimsPrincipal user, BounceRouteDbContext db, BusinessClock clock)
@@ -51,7 +52,7 @@ public static class RouteEndpoints
 		if (job is null)
 			return TypedResults.NotFound();
 
-		return TypedResults.Ok(ToCard(job, await IsNextUpAsync(db, clock, viewer, job)));
+		return TypedResults.Ok(ToCard(job, await SetupTimes.LoadAsync(db), await IsNextUpAsync(db, clock, viewer, job)));
 	}
 
 	private static async Task<Results<Ok<JobCardDto>, NotFound, ValidationProblem>> CompleteJob(
@@ -75,7 +76,7 @@ public static class RouteEndpoints
 		job.CompletedBy = crewMember;
 		await db.SaveChangesAsync();
 
-		return TypedResults.Ok(ToCard(job, await IsNextUpAsync(db, clock, viewer, job)));
+		return TypedResults.Ok(ToCard(job, await SetupTimes.LoadAsync(db), await IsNextUpAsync(db, clock, viewer, job)));
 	}
 
 	private static async Task<Results<Ok<JobCardDto>, NotFound>> ReopenJob(int id, ClaimsPrincipal user, BounceRouteDbContext db, BusinessClock clock)
@@ -91,7 +92,7 @@ public static class RouteEndpoints
 		job.CompletedBy = null;
 		await db.SaveChangesAsync();
 
-		return TypedResults.Ok(ToCard(job, await IsNextUpAsync(db, clock, viewer, job)));
+		return TypedResults.Ok(ToCard(job, await SetupTimes.LoadAsync(db), await IsNextUpAsync(db, clock, viewer, job)));
 	}
 
 	private static async Task<Results<Ok<BookingItemDto>, NotFound>> SetItemLoaded(
@@ -134,7 +135,7 @@ public static class RouteEndpoints
 		return firstOpenId == job.Id;
 	}
 
-	private static JobCardDto ToCard(Job job, bool isNextUp)
+	private static JobCardDto ToCard(Job job, IReadOnlyDictionary<InventoryCategory, int> times, bool isNextUp)
 	{
 		var booking = job.Booking;
 		var items = booking.Items.OrderBy(item => item.Id).Select(BookingEndpoints.ToDto).ToList();
@@ -161,6 +162,7 @@ public static class RouteEndpoints
 			[.. job.Assignments
 				.Select(assignment => assignment.CrewMember)
 				.OrderBy(crew => crew.Name)
-				.Select(crew => new CrewSummaryDto(crew.Id, crew.Name, crew.Initials))]);
+				.Select(crew => new CrewSummaryDto(crew.Id, crew.Name, crew.Initials))],
+			SetupTimes.ForItems(booking.Items, times));
 	}
 }

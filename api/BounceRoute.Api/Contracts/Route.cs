@@ -24,7 +24,8 @@ public sealed record JobCardDto(
 	string SiteNotes,
 	IReadOnlyList<BookingItemDto> Units,
 	IReadOnlyList<BookingItemDto> Extras,
-	IReadOnlyList<CrewSummaryDto> Crew);
+	IReadOnlyList<CrewSummaryDto> Crew,
+	int WorkMinutes);
 
 public sealed record RouteDayDto(DateOnly Date, IReadOnlyList<JobCardDto> Jobs);
 

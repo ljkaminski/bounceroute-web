@@ -121,12 +121,13 @@ public static class InventoryEndpoints
 		item.DailyPrice = request.DailyPrice;
 		item.Notes = request.Notes?.Trim() ?? string.Empty;
 		item.IsActive = request.IsActive;
+		item.SetupMinutes = request.SetupMinutes;
 	}
 
 	internal static InventoryItemDto ToDto(InventoryItem item) => new(
 		item.Id, item.Name, item.Category, item.IsUnit, item.Quantity, item.WaterUse, item.NeedsPower,
 		item.LengthFt, item.WidthFt, item.HeightFt, item.DailyPrice, item.Notes, item.IsActive,
-		PhotoUrl(item.Id, item.PhotoVersion));
+		PhotoUrl(item.Id, item.PhotoVersion), item.SetupMinutes);
 
 	internal static string? PhotoUrl(int itemId, int? version) =>
 		version is null ? null : $"/api/inventory/{itemId}/photo?v={version}";

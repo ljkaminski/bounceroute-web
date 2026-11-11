@@ -1133,6 +1133,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/settings/setup-times": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Minutes to set up (or take down) one unit of each type. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CategorySetupTimeDto"][];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CategorySetupTimeDto"][];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CategorySetupTimeDto"][];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users": {
         parameters: {
             query?: never;
@@ -1359,6 +1418,11 @@ export interface components {
             unitCount: number;
             isComplete: boolean;
         };
+        CategorySetupTimeDto: {
+            category: components["schemas"]["InventoryCategory"];
+            /** Format: int32 */
+            minutes: number;
+        };
         ChangePasswordRequest: {
             currentPassword: string;
             newPassword: string;
@@ -1466,6 +1530,8 @@ export interface components {
             notes: string;
             isActive: boolean;
             photoUrl: null | string;
+            /** Format: int32 */
+            setupMinutes: null | number;
         };
         JobCardDto: {
             /** Format: int32 */
@@ -1492,6 +1558,8 @@ export interface components {
             units: components["schemas"]["BookingItemDto"][];
             extras: components["schemas"]["BookingItemDto"][];
             crew: components["schemas"]["CrewSummaryDto"][];
+            /** Format: int32 */
+            workMinutes: number;
         };
         JobScheduleDto: {
             /** Format: int32 */
@@ -1567,6 +1635,8 @@ export interface components {
             notes: null | string;
             /** @default true */
             isActive: boolean;
+            /** Format: int32 */
+            setupMinutes?: null | number;
         };
         SaveJobScheduleRequest: {
             /** Format: date-time */
