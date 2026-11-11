@@ -132,10 +132,15 @@ export function useSaveBooking(id: number | undefined) {
 }
 
 export function useDeleteBooking() {
-  const refresh = useRefreshAll()
+  const client = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => unwrap(api.DELETE('/api/bookings/{id}', { params: { path: { id } } })),
-    onSuccess: refresh,
+    // Refresh everything except the booking that's gone. Re-fetching it gets a 404, and if that lands before the
+    // page navigates away, the edit page swaps to "Not found." and the navigation never happens.
+    onSuccess: (_, id) => {
+      const [name, deletedId] = keys.booking(id)
+      return client.invalidateQueries({ predicate: (query) => !(query.queryKey[0] === name && query.queryKey[1] === deletedId) })
+    },
   })
 }
 
