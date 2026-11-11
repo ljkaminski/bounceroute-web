@@ -20,6 +20,8 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 
 	public DbSet<CompanySettings> CompanySettings => Set<CompanySettings>();
 
+	public DbSet<InventoryPhoto> InventoryPhotos => Set<InventoryPhoto>();
+
 	protected override void OnModelCreating(ModelBuilder model)
 	{
 		base.OnModelCreating(model);
@@ -52,6 +54,13 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 		{
 			item.Property(i => i.Name).HasMaxLength(80);
 			item.HasOne(i => i.InventoryItem).WithMany().OnDelete(DeleteBehavior.Restrict);
+		});
+
+		model.Entity<InventoryPhoto>(photo =>
+		{
+			photo.HasKey(p => p.InventoryItemId);
+			photo.HasOne<InventoryItem>().WithOne().HasForeignKey<InventoryPhoto>(p => p.InventoryItemId).OnDelete(DeleteBehavior.Cascade);
+			photo.Property(p => p.ContentType).HasMaxLength(20);
 		});
 
 		model.Entity<CompanySettings>(settings =>

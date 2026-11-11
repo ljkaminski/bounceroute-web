@@ -125,5 +125,9 @@ public static class InventoryEndpoints
 
 	internal static InventoryItemDto ToDto(InventoryItem item) => new(
 		item.Id, item.Name, item.Category, item.IsUnit, item.Quantity, item.WaterUse, item.NeedsPower,
-		item.LengthFt, item.WidthFt, item.HeightFt, item.DailyPrice, item.Notes, item.IsActive);
+		item.LengthFt, item.WidthFt, item.HeightFt, item.DailyPrice, item.Notes, item.IsActive,
+		PhotoUrl(item.Id, item.PhotoVersion));
+
+	internal static string? PhotoUrl(int itemId, int? version) =>
+		version is null ? null : $"/api/inventory/{itemId}/photo?v={version}";
 }

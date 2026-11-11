@@ -100,6 +100,7 @@ app.MapRouteEndpoints();
 app.MapBookingEndpoints();
 app.MapCrewEndpoints();
 app.MapInventoryEndpoints();
+app.MapInventoryPhotoEndpoints();
 app.MapSettingsEndpoints();
 app.MapUserEndpoints();
 

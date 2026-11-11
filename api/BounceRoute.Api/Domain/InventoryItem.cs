@@ -31,6 +31,10 @@ public sealed class InventoryItem
 
 	public string Notes { get; set; } = string.Empty;
 
+	// Bumped on every photo upload; null when there's no photo. Goes in the photo URL so browsers
+	// cache a photo forever but fetch the new one as soon as it changes.
+	public int? PhotoVersion { get; set; }
+
 	// Retired items stay so old bookings still point at something.
 	public bool IsActive { get; set; } = true;
 }

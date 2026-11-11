@@ -890,6 +890,125 @@
         }
       }
     },
+    "/api/inventory/{id}/photo": {
+      "get": {
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Inventory"
+        ],
+        "summary": "Sets the item's photo. Send the image bytes as the request body (JPEG, PNG, or WebP, up to 3 MB).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "byte"
+              }
+            },
+            "image/png": {
+              "schema": {
+                "type": "string",
+                "format": "byte"
+              }
+            },
+            "image/webp": {
+              "schema": {
+                "type": "string",
+                "format": "byte"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryItemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryItemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/api/settings": {
       "get": {
         "tags": [
@@ -1552,7 +1671,8 @@
           "heightFt",
           "dailyPrice",
           "notes",
-          "isActive"
+          "isActive",
+          "photoUrl"
         ],
         "type": "object",
         "properties": {
@@ -1612,6 +1732,12 @@
           },
           "isActive": {
             "type": "boolean"
+          },
+          "photoUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

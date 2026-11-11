@@ -295,6 +295,9 @@ namespace BounceRoute.Api.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<int?>("PhotoVersion")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
@@ -315,6 +318,28 @@ namespace BounceRoute.Api.Data.Migrations
                         {
                             t.HasCheckConstraint("CK_InventoryItems_Quantity", "\"Quantity\" >= 1");
                         });
+                });
+
+            modelBuilder.Entity("BounceRoute.Api.Domain.InventoryPhoto", b =>
+                {
+                    b.Property<int>("InventoryItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<byte[]>("Data")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTimeOffset>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("InventoryItemId");
+
+                    b.ToTable("InventoryPhotos");
                 });
 
             modelBuilder.Entity("BounceRoute.Api.Domain.Job", b =>
@@ -538,6 +563,15 @@ namespace BounceRoute.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("InventoryItem");
+                });
+
+            modelBuilder.Entity("BounceRoute.Api.Domain.InventoryPhoto", b =>
+                {
+                    b.HasOne("BounceRoute.Api.Domain.InventoryItem", null)
+                        .WithOne()
+                        .HasForeignKey("BounceRoute.Api.Domain.InventoryPhoto", "InventoryItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("BounceRoute.Api.Domain.Job", b =>

@@ -16,7 +16,8 @@ public sealed record InventoryItemDto(
 	int? HeightFt,
 	decimal? DailyPrice,
 	string Notes,
-	bool IsActive);
+	bool IsActive,
+	string? PhotoUrl);
 
 public sealed record SaveInventoryItemRequest(
 	[property: Required, MaxLength(80)] string Name,

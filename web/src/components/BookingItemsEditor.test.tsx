@@ -20,6 +20,7 @@ const item = (id: number, name: string, patch: Partial<InventoryItem> = {}): Inv
   dailyPrice: 250,
   notes: '',
   isActive: true,
+  photoUrl: null,
   ...patch,
 })
 
