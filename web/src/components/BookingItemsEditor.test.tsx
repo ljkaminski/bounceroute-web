@@ -22,6 +22,7 @@ const item = (id: number, name: string, patch: Partial<InventoryItem> = {}): Inv
   isActive: true,
   photoUrl: null,
   setupMinutes: null,
+  truckSpace: 1,
   ...patch,
 })
 

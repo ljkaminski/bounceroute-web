@@ -381,6 +381,9 @@ namespace BounceRoute.Api.Data.Migrations
                     b.Property<int?>("SetupMinutes")
                         .HasColumnType("integer");
 
+                    b.Property<int>("TruckSpace")
+                        .HasColumnType("integer");
+
                     b.Property<string>("WaterUse")
                         .IsRequired()
                         .HasMaxLength(10)
@@ -485,6 +488,51 @@ namespace BounceRoute.Api.Data.Migrations
                     b.HasIndex("CrewMemberId");
 
                     b.ToTable("JobAssignments");
+                });
+
+            modelBuilder.Entity("BounceRoute.Api.Domain.Truck", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Trucks", t =>
+                        {
+                            t.HasCheckConstraint("CK_Trucks_Capacity", "\"Capacity\" >= 1");
+                        });
+                });
+
+            modelBuilder.Entity("BounceRoute.Api.Domain.TruckCrewMember", b =>
+                {
+                    b.Property<int>("TruckId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CrewMemberId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("TruckId", "CrewMemberId");
+
+                    b.HasIndex("CrewMemberId");
+
+                    b.ToTable("TruckCrewMember");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -689,6 +737,21 @@ namespace BounceRoute.Api.Data.Migrations
                     b.Navigation("CrewMember");
                 });
 
+            modelBuilder.Entity("BounceRoute.Api.Domain.TruckCrewMember", b =>
+                {
+                    b.HasOne("BounceRoute.Api.Domain.CrewMember", null)
+                        .WithMany()
+                        .HasForeignKey("CrewMemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BounceRoute.Api.Domain.Truck", null)
+                        .WithMany("Crew")
+                        .HasForeignKey("TruckId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -750,6 +813,11 @@ namespace BounceRoute.Api.Data.Migrations
             modelBuilder.Entity("BounceRoute.Api.Domain.Job", b =>
                 {
                     b.Navigation("Assignments");
+                });
+
+            modelBuilder.Entity("BounceRoute.Api.Domain.Truck", b =>
+                {
+                    b.Navigation("Crew");
                 });
 #pragma warning restore 612, 618
         }

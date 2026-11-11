@@ -119,6 +119,7 @@ app.MapCrewEndpoints();
 app.MapInventoryEndpoints();
 app.MapInventoryPhotoEndpoints();
 app.MapSettingsEndpoints();
+app.MapTruckEndpoints();
 app.MapUserEndpoints();
 
 // The build also starts this app to write the OpenAPI file; it must not touch the database then.

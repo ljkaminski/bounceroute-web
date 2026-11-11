@@ -122,12 +122,14 @@ public static class InventoryEndpoints
 		item.Notes = request.Notes?.Trim() ?? string.Empty;
 		item.IsActive = request.IsActive;
 		item.SetupMinutes = request.SetupMinutes;
+		// Left out (e.g. an older import file): 1 piece, or 0 for equipment like a generator.
+		item.TruckSpace = request.TruckSpace ?? (request.Category == InventoryCategory.Equipment ? 0 : 1);
 	}
 
 	internal static InventoryItemDto ToDto(InventoryItem item) => new(
 		item.Id, item.Name, item.Category, item.IsUnit, item.Quantity, item.WaterUse, item.NeedsPower,
 		item.LengthFt, item.WidthFt, item.HeightFt, item.DailyPrice, item.Notes, item.IsActive,
-		PhotoUrl(item.Id, item.PhotoVersion), item.SetupMinutes);
+		PhotoUrl(item.Id, item.PhotoVersion), item.SetupMinutes, item.TruckSpace);
 
 	internal static string? PhotoUrl(int itemId, int? version) =>
 		version is null ? null : $"/api/inventory/{itemId}/photo?v={version}";

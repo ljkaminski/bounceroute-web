@@ -24,6 +24,8 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 
 	public DbSet<CategorySetupTime> CategorySetupTimes => Set<CategorySetupTime>();
 
+	public DbSet<Truck> Trucks => Set<Truck>();
+
 	protected override void OnModelCreating(ModelBuilder model)
 	{
 		base.OnModelCreating(model);
@@ -57,6 +59,20 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 		{
 			item.Property(i => i.Name).HasMaxLength(80);
 			item.HasOne(i => i.InventoryItem).WithMany().OnDelete(DeleteBehavior.Restrict);
+		});
+
+		model.Entity<Truck>(truck =>
+		{
+			truck.Property(t => t.Name).HasMaxLength(30);
+			truck.HasIndex(t => t.Name).IsUnique();
+			truck.ToTable(table => table.HasCheckConstraint("CK_Trucks_Capacity", "\"Capacity\" >= 1"));
+		});
+
+		model.Entity<TruckCrewMember>(member =>
+		{
+			member.HasKey(m => new { m.TruckId, m.CrewMemberId });
+			member.HasOne<Truck>().WithMany(t => t.Crew).HasForeignKey(m => m.TruckId);
+			member.HasOne<CrewMember>().WithMany().HasForeignKey(m => m.CrewMemberId);
 		});
 
 		model.Entity<CategorySetupTime>(time =>

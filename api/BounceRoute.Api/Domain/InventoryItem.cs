@@ -29,6 +29,10 @@ public sealed class InventoryItem
 
 	public decimal? DailyPrice { get; set; }
 
+	// How many of a truck's pieces this takes up. Most units are 1; the big 30 ft slides are 2.
+	// Small equipment like a generator rides along without taking a unit's spot, so 0.
+	public int TruckSpace { get; set; } = 1;
+
 	// Overrides the type's setup time for this one unit (e.g. 30 ft slides take longer). Null uses the type's time.
 	public int? SetupMinutes { get; set; }
 

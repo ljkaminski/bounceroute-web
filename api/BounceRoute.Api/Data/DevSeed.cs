@@ -40,6 +40,7 @@ public static class DevSeed
 			Crew("Morgan Diaz", "Crew")
 		};
 		db.CrewMembers.AddRange(crew);
+		db.Trucks.AddRange(new Truck { Name = "Truck 1" }, new Truck { Name = "Truck 2" });
 		db.CompanySettings.Add(new CompanySettings
 		{
 			CompanyName = "Demo Party Rentals",
@@ -56,6 +57,7 @@ public static class DevSeed
 			WaterUse = water,
 			Quantity = quantity,
 			NeedsPower = category != InventoryCategory.Game,
+			TruckSpace = category == InventoryCategory.Equipment ? 0 : 1,
 			LengthFt = length,
 			WidthFt = width,
 			HeightFt = height,

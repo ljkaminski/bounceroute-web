@@ -18,7 +18,8 @@ public sealed record InventoryItemDto(
 	string Notes,
 	bool IsActive,
 	string? PhotoUrl,
-	int? SetupMinutes);
+	int? SetupMinutes,
+	int TruckSpace);
 
 public sealed record SaveInventoryItemRequest(
 	[property: Required, MaxLength(80)] string Name,
@@ -33,7 +34,8 @@ public sealed record SaveInventoryItemRequest(
 	[property: Range(0, 100000)] decimal? DailyPrice,
 	[property: MaxLength(500)] string? Notes,
 	bool IsActive = true,
-	[property: Range(0, 600)] int? SetupMinutes = null);
+	[property: Range(0, 600)] int? SetupMinutes = null,
+	[property: Range(0, 10)] int? TruckSpace = null);
 
 public sealed record InventoryImportResult(int Created, int Updated);
 

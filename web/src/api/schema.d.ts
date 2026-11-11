@@ -1230,6 +1230,131 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/trucks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TruckDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveTruckRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TruckDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trucks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Renaming a truck renames it on its jobs too. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveTruckRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TruckDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users": {
         parameters: {
             query?: never;
@@ -1572,6 +1697,8 @@ export interface components {
             photoUrl: null | string;
             /** Format: int32 */
             setupMinutes: null | number;
+            /** Format: int32 */
+            truckSpace: number;
         };
         JobCardDto: {
             /** Format: int32 */
@@ -1706,6 +1833,8 @@ export interface components {
             isActive: boolean;
             /** Format: int32 */
             setupMinutes?: null | number;
+            /** Format: int32 */
+            truckSpace?: null | number;
         };
         SaveJobScheduleRequest: {
             /** Format: date-time */
@@ -1713,11 +1842,27 @@ export interface components {
             truck: null | string;
             crewMemberIds: null | number[];
         };
+        SaveTruckRequest: {
+            name: string;
+            /** Format: int32 */
+            capacity: number;
+            isActive: boolean;
+            crewMemberIds: null | number[];
+        };
         SetItemLoadedRequest: {
             isLoaded: boolean;
         };
         /** @enum {unknown} */
         Surface: "Grass" | "Concrete" | "Gravel" | "Inside";
+        TruckDto: {
+            /** Format: int32 */
+            id: number;
+            name: string;
+            /** Format: int32 */
+            capacity: number;
+            isActive: boolean;
+            crewMemberIds: number[];
+        };
         TruckPlanDto: {
             truck: string;
             /** Format: date-time */
