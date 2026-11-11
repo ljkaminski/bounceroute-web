@@ -8,6 +8,7 @@ import { RequireRole } from './auth/RequireRole'
 import { meKey } from './auth/useAuth'
 import { Layout } from './components/Layout'
 import './index.css'
+import { AccountsPage } from './pages/AccountsPage'
 import { BookingFormPage } from './pages/BookingFormPage'
 import { BookingsPage } from './pages/BookingsPage'
 import { CrewPage } from './pages/CrewPage'
@@ -51,6 +52,10 @@ const router = createBrowserRouter([
               { path: 'bookings/:id/edit', element: <BookingFormPage /> },
               { path: 'crew', element: <CrewPage /> },
             ],
+          },
+          {
+            element: <RequireRole roles={['Owner']} />,
+            children: [{ path: 'accounts', element: <AccountsPage /> }],
           },
         ],
       },

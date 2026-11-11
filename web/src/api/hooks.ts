@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, unwrap, type SaveBookingRequest } from './client'
+import { api, unwrap, type CreateUserRequest, type SaveBookingRequest, type UpdateUserRequest } from './client'
 
 export const keys = {
   route: (date: string) => ['route', date] as const,
@@ -9,6 +9,7 @@ export const keys = {
   crew: ['crew'] as const,
   units: (from: string, to: string) => ['units', from, to] as const,
   myUnits: (from: string, to: string) => ['my-units', from, to] as const,
+  users: ['users'] as const,
 }
 
 export const useRouteDay = (date: string) =>
@@ -36,10 +37,16 @@ export const useBooking = (id: number | undefined) =>
     enabled: id !== undefined,
   })
 
-export const useCrew = () =>
+export const useCrew = (includeInactive = false) =>
   useQuery({
-    queryKey: keys.crew,
-    queryFn: () => unwrap(api.GET('/api/crew', { params: { query: {} } })),
+    queryKey: [...keys.crew, includeInactive],
+    queryFn: () => unwrap(api.GET('/api/crew', { params: { query: { includeInactive } } })),
+  })
+
+export const useUsers = () =>
+  useQuery({
+    queryKey: keys.users,
+    queryFn: () => unwrap(api.GET('/api/users')),
   })
 
 export const useUnitTotals = (from: string, to: string) =>
@@ -113,5 +120,29 @@ export function useAddCrewMember() {
     mutationFn: (body: { name: string; role: string }) =>
       unwrap(api.POST('/api/crew', { body: { ...body, initials: null, isActive: true } })),
     onSuccess: refresh,
+  })
+}
+
+export function useCreateUser() {
+  const refresh = useRefreshAll()
+  return useMutation({
+    mutationFn: (body: CreateUserRequest) => unwrap(api.POST('/api/users', { body })),
+    onSuccess: refresh,
+  })
+}
+
+export function useUpdateUser() {
+  const refresh = useRefreshAll()
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: UpdateUserRequest }) =>
+      unwrap(api.PUT('/api/users/{id}', { params: { path: { id } }, body })),
+    onSuccess: refresh,
+  })
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: ({ id, newPassword }: { id: string; newPassword: string }) =>
+      unwrap(api.POST('/api/users/{id}/password', { params: { path: { id } }, body: { newPassword } })),
   })
 }

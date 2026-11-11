@@ -10,6 +10,9 @@ export type CrewMember = Schemas['CrewMemberDto']
 export type UnitTotalsReport = Schemas['UnitTotalsReport']
 export type Surface = Schemas['Surface']
 export type CurrentUser = Schemas['CurrentUserDto']
+export type User = Schemas['UserDto']
+export type CreateUserRequest = Schemas['CreateUserRequest']
+export type UpdateUserRequest = Schemas['UpdateUserRequest']
 
 // Empty in development (Vite proxies /api); set VITE_API_URL when the API lives elsewhere.
 // fetch is looked up per request (not captured once) so tests can stub it.

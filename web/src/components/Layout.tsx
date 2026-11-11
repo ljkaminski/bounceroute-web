@@ -8,6 +8,8 @@ const officeLinks = [
   { to: '/crew', label: 'Crew & pay', end: false },
 ]
 
+const ownerLinks = [...officeLinks, { to: '/accounts', label: 'Accounts', end: false }]
+
 const crewLinks = [
   { to: '/', label: 'My route', end: true },
   { to: '/me/units', label: 'My units', end: false },
@@ -16,7 +18,7 @@ const crewLinks = [
 export function Layout() {
   const me = useCurrentUser().data
   const logout = useLogout()
-  const links = isOffice(me) ? officeLinks : crewLinks
+  const links = me?.role === 'Owner' ? ownerLinks : isOffice(me) ? officeLinks : crewLinks
 
   return (
     <div className="min-h-dvh">
