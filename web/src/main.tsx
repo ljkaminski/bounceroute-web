@@ -17,6 +17,7 @@ import { JobPage } from './pages/JobPage'
 import { ChangePasswordPage } from './pages/ChangePasswordPage'
 import { LoginPage } from './pages/LoginPage'
 import { MyUnitsPage } from './pages/MyUnitsPage'
+import { NotFoundPage } from './pages/NotFoundPage'
 import { RoutePage } from './pages/RoutePage'
 import { SettingsPage } from './pages/SettingsPage'
 
@@ -65,6 +66,7 @@ const router = createBrowserRouter([
               { path: 'settings', element: <SettingsPage /> },
             ],
           },
+          { path: '*', element: <NotFoundPage /> },
         ],
       },
     ],
