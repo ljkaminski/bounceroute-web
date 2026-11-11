@@ -297,6 +297,11 @@ namespace BounceRoute.Api.Data.Migrations
                     b.Property<double?>("ShopLongitude")
                         .HasColumnType("double precision");
 
+                    b.Property<bool>("SuggestRoutes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
                     b.HasKey("Id");
 
                     b.ToTable("CompanySettings", t =>

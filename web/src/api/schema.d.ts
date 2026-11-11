@@ -1774,6 +1774,7 @@ export interface components {
             phone: string;
             shopAddress: string;
             mapsConfigured: boolean;
+            suggestRoutes: boolean;
         };
         CompleteJobRequest: {
             /** Format: int32 */
@@ -2016,6 +2017,7 @@ export interface components {
             defaultCityStateZip: null | string;
             phone: null | string;
             shopAddress?: null | string;
+            suggestRoutes?: null | boolean;
         };
         SaveCrewMemberRequest: {
             name: string;

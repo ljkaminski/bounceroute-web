@@ -32,7 +32,7 @@ public static class RoutePlanEndpoints
 			.ToListAsync(cancellationToken);
 
 		var settings = await db.CompanySettings.FindAsync([CompanySettings.SingletonId], cancellationToken);
-		var shop = ShopPoint(settings);
+		var shop = await LocateShopAsync(settings, db, maps, cancellationToken);
 
 		if (maps.IsConfigured)
 			await LocateAsync(jobs.Select(job => job.Booking).Distinct(), db, maps, cancellationToken);
@@ -56,6 +56,23 @@ public static class RoutePlanEndpoints
 
 	internal static GeoPoint? ShopPoint(CompanySettings? settings) =>
 		settings is { ShopLatitude: double lat, ShopLongitude: double lon } ? new GeoPoint(lat, lon) : null;
+
+	// The shop gets looked up when its address is saved. If the service didn't answer then, try again now.
+	internal static async Task<GeoPoint?> LocateShopAsync(CompanySettings? settings, BounceRouteDbContext db, IMaps maps, CancellationToken cancellationToken)
+	{
+		if (ShopPoint(settings) is GeoPoint known)
+			return known;
+		if (settings is null || string.IsNullOrWhiteSpace(settings.ShopAddress) || !maps.IsConfigured)
+			return null;
+
+		var result = await maps.GeocodeAsync(settings.ShopAddress, cancellationToken);
+		if (result.Point is not GeoPoint point)
+			return null;
+		settings.ShopLatitude = point.Latitude;
+		settings.ShopLongitude = point.Longitude;
+		await db.SaveChangesAsync(cancellationToken);
+		return point;
+	}
 
 	private static async Task<TruckPlanDto> PlanTruckAsync(
 		string truck, List<Job> stops, GeoPoint? shop, IReadOnlyDictionary<InventoryCategory, int> times, IMaps maps, CancellationToken cancellationToken)
@@ -155,9 +172,12 @@ public static class RoutePlanEndpoints
 		var changed = false;
 		foreach (var booking in bookings.Where(booking => booking.GeocodedAddress != booking.FullAddress))
 		{
-			var point = await maps.GeocodeAsync(booking.FullAddress, cancellationToken);
-			booking.Latitude = point?.Latitude;
-			booking.Longitude = point?.Longitude;
+			var result = await maps.GeocodeAsync(booking.FullAddress, cancellationToken);
+			// The service didn't answer; leave it to be asked again next time instead of marking it not found.
+			if (result.Outcome == GeocodeOutcome.Failed)
+				continue;
+			booking.Latitude = result.Point?.Latitude;
+			booking.Longitude = result.Point?.Longitude;
 			booking.GeocodedAddress = booking.FullAddress;
 			changed = true;
 		}

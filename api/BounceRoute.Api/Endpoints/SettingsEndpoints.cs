@@ -36,12 +36,14 @@ public static class SettingsEndpoints
 		settings.CompanyName = request.CompanyName?.Trim() ?? string.Empty;
 		settings.DefaultCityStateZip = request.DefaultCityStateZip?.Trim() ?? string.Empty;
 		settings.Phone = request.Phone?.Trim() ?? string.Empty;
+		settings.SuggestRoutes = request.SuggestRoutes ?? settings.SuggestRoutes;
 
 		var shop = request.ShopAddress?.Trim() ?? string.Empty;
 		if (shop != settings.ShopAddress)
 		{
 			settings.ShopAddress = shop;
-			var point = shop.Length == 0 ? null : await maps.GeocodeAsync(shop);
+			// If the service doesn't answer now, route plans try the lookup again when they need it.
+			var point = shop.Length == 0 ? null : (await maps.GeocodeAsync(shop)).Point;
 			settings.ShopLatitude = point?.Latitude;
 			settings.ShopLongitude = point?.Longitude;
 		}
@@ -67,5 +69,5 @@ public static class SettingsEndpoints
 	}
 
 	private static CompanySettingsDto ToDto(CompanySettings settings, IMaps maps) =>
-		new(settings.CompanyName, settings.DefaultCityStateZip, settings.Phone, settings.ShopAddress, maps.IsConfigured);
+		new(settings.CompanyName, settings.DefaultCityStateZip, settings.Phone, settings.ShopAddress, maps.IsConfigured, settings.SuggestRoutes);
 }

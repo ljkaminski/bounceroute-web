@@ -118,7 +118,7 @@ public sealed class SettingsTests(ApiFactory factory) : IClassFixture<ApiFactory
 		await owner.PutAsJsonAsync("/api/settings", new SaveCompanySettingsRequest("Test Rentals", "Monroe, NC 28110", null), ApiFactory.Json);
 
 		var seen = await (await crew.GetAsync("/api/settings")).ReadAsync<CompanySettingsDto>();
-		Assert.Equal(new CompanySettingsDto("Test Rentals", "Monroe, NC 28110", "", "", MapsConfigured: false), seen);
+		Assert.Equal(new CompanySettingsDto("Test Rentals", "Monroe, NC 28110", "", "", MapsConfigured: false, SuggestRoutes: true), seen);
 		Assert.Equal(HttpStatusCode.Forbidden,
 			(await crew.PutAsJsonAsync("/api/settings", new SaveCompanySettingsRequest("Hijack", null, null), ApiFactory.Json)).StatusCode);
 	}

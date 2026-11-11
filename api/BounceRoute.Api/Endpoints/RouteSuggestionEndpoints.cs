@@ -30,6 +30,10 @@ public static class RouteSuggestionEndpoints
 			.WithSummary("Uses the suggested plan. Refused if the day changed since the suggestion was shown.");
 	}
 
+	public const string SuggestionsOff = "Route suggestions are turned off in Settings.";
+
+	private const string MapsBusy = "The map service isn't answering right now, so the plan can't be checked. It'll try again next time you open this day.";
+
 	private sealed record Proposal(RouteSuggestionDto Dto, Dictionary<int, (string Truck, DateTimeOffset At)> Moves);
 
 	private static async Task<RouteSuggestionDto> GetSuggestion(
@@ -76,6 +80,10 @@ public static class RouteSuggestionEndpoints
 	{
 		Proposal NotAvailable(string reason) => new(new RouteSuggestionDto(date, SuggestionStatus.NotAvailable, reason, null, null, [], [], null, []), []);
 
+		var settings = await db.CompanySettings.FindAsync([CompanySettings.SingletonId], cancellationToken);
+		if (settings is { SuggestRoutes: false })
+			return NotAvailable(SuggestionsOff);
+
 		var (start, end) = clock.Range(date, date);
 		var jobs = await db.Jobs
 			.Include(job => job.Booking).ThenInclude(booking => booking.Items).ThenInclude(item => item.InventoryItem)
@@ -92,11 +100,16 @@ public static class RouteSuggestionEndpoints
 		if (!maps.IsConfigured)
 			return NotAvailable("Route planning needs the map service set up.");
 
-		var shop = RoutePlanEndpoints.ShopPoint(await db.CompanySettings.FindAsync([CompanySettings.SingletonId], cancellationToken));
+		var shop = await RoutePlanEndpoints.LocateShopAsync(settings, db, maps, cancellationToken);
 		if (shop is not GeoPoint shopPoint)
-			return NotAvailable("Add the shop address in Settings to plan routes.");
+			return NotAvailable(string.IsNullOrWhiteSpace(settings?.ShopAddress)
+				? "Add the shop address in Settings to plan routes."
+				: MapsBusy);
 
 		await RoutePlanEndpoints.LocateAsync(jobs.Select(job => job.Booking).Distinct(), db, maps, cancellationToken);
+		// Not asked yet (the service didn't answer) is different from asked and not found.
+		if (jobs.Any(job => job.Booking.GeocodedAddress != job.Booking.FullAddress))
+			return NotAvailable(MapsBusy);
 		var lost = jobs.Where(job => job.Booking.Latitude is null).Select(job => job.Booking.CustomerName).Distinct().ToList();
 		if (lost.Count > 0)
 			return NotAvailable($"Couldn't find the address on the map for {string.Join(", ", lost)}. Check the street and town.");

@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router'
-import { useRouteDay, useRoutePlan } from '../api/hooks'
+import { useRouteDay, useRoutePlan, useSettings } from '../api/hooks'
 import { isOffice } from '../auth/roles'
 import { useCurrentUser } from '../auth/useAuth'
 import { EmptyState, ErrorBox, Loading } from '../components/Feedback'
@@ -18,6 +18,7 @@ export function RoutePage() {
   const plan = useRoutePlan(date)
   const plannedStops = new Map(plan.data?.trucks.flatMap((truck) => truck.stops).map((stop) => [stop.jobId, stop]))
   const office = isOffice(useCurrentUser().data)
+  const suggestRoutes = useSettings().data?.suggestRoutes ?? false
   const goTo = (day: string) => setParams(day === today() ? {} : { date: day })
 
   const jobs = route.data?.jobs ?? []
@@ -59,7 +60,7 @@ export function RoutePage() {
       </div>
 
       {office && <TrucksOutPicker date={date} />}
-      {office && jobs.length > 0 && <SuggestionCard key={date} date={date} />}
+      {office && suggestRoutes && jobs.length > 0 && <SuggestionCard key={date} date={date} />}
 
       {route.isPending ? (
         <Loading what="Loading route" />

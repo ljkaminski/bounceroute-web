@@ -259,7 +259,7 @@ export function useImportInventory() {
 export function useSaveSettings() {
   const refresh = useRefreshAll()
   return useMutation({
-    mutationFn: (body: { companyName: string; defaultCityStateZip: string; phone: string; shopAddress: string }) =>
+    mutationFn: (body: { companyName: string; defaultCityStateZip: string; phone: string; shopAddress: string; suggestRoutes: boolean }) =>
       unwrap(api.PUT('/api/settings', { body })),
     onSuccess: refresh,
   })

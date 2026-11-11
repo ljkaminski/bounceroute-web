@@ -17,7 +17,20 @@ public sealed class OpenRouteServiceMaps(HttpClient http, IMemoryCache cache, IL
 
 	public bool IsConfigured => true;
 
-	public async Task<GeoPoint?> GeocodeAsync(string address, CancellationToken cancellationToken = default)
+	public async Task<GeocodeResult> GeocodeAsync(string address, CancellationToken cancellationToken = default)
+	{
+		// Answers are remembered so checking the same day again doesn't use up the daily lookup quota.
+		var key = $"geocode:{address.Trim().ToUpperInvariant()}";
+		if (cache.TryGetValue(key, out GeocodeResult known))
+			return known;
+
+		var result = await LookUpAsync(address, cancellationToken);
+		if (result.Outcome != GeocodeOutcome.Failed)
+			cache.Set(key, result, TimeSpan.FromDays(30));
+		return result;
+	}
+
+	private async Task<GeocodeResult> LookUpAsync(string address, CancellationToken cancellationToken)
 	{
 		try
 		{
@@ -25,23 +38,23 @@ public sealed class OpenRouteServiceMaps(HttpClient http, IMemoryCache cache, IL
 			using var document = JsonDocument.Parse(await http.GetStringAsync(url, cancellationToken));
 			var features = document.RootElement.GetProperty("features");
 			if (features.GetArrayLength() == 0)
-				return null;
+				return GeocodeResult.NotFound;
 
 			var layer = features[0].GetProperty("properties").GetProperty("layer").GetString();
 			if (layer is null || !PreciseEnough.Contains(layer))
 			{
 				logger.LogInformation("Only found {Layer} for {Address}; treating as not found", layer, address);
-				return null;
+				return GeocodeResult.NotFound;
 			}
 
 			// GeoJSON order is longitude, latitude.
 			var coordinates = features[0].GetProperty("geometry").GetProperty("coordinates");
-			return new GeoPoint(coordinates[1].GetDouble(), coordinates[0].GetDouble());
+			return GeocodeResult.Found(new GeoPoint(coordinates[1].GetDouble(), coordinates[0].GetDouble()));
 		}
 		catch (Exception exception) when (exception is HttpRequestException or JsonException or KeyNotFoundException or TaskCanceledException)
 		{
 			logger.LogWarning(exception, "Address lookup failed for {Address}", address);
-			return null;
+			return GeocodeResult.Failed;
 		}
 	}
 

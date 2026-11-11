@@ -35,7 +35,7 @@ it('goes back to the bookings list after deleting, even though the booking is no
     'GET /api/trucks': () => ({ status: 200, body: [] }),
     'GET /api/inventory': () => ({ status: 200, body: [] }),
     'GET /api/inventory/availability': () => ({ status: 200, body: [] }),
-    'GET /api/settings': () => ({ status: 200, body: { companyName: '', defaultCityStateZip: '', phone: '', shopAddress: '', mapsConfigured: false } }),
+    'GET /api/settings': () => ({ status: 200, body: { companyName: '', defaultCityStateZip: '', phone: '', shopAddress: '', mapsConfigured: false, suggestRoutes: true } }),
   })
   renderRoutes(
     [
@@ -59,7 +59,7 @@ it('moves the crew times when the party time changes', async () => {
     'GET /api/trucks': () => ({ status: 200, body: [{ id: 1, name: 'Truck 1', capacity: 6, isActive: true, crewMemberIds: [] }] }),
     'GET /api/inventory': () => ({ status: 200, body: [] }),
     'GET /api/inventory/availability': () => ({ status: 200, body: [] }),
-    'GET /api/settings': () => ({ status: 200, body: { companyName: '', defaultCityStateZip: 'Monroe, NC 28110', phone: '', shopAddress: '', mapsConfigured: false } }),
+    'GET /api/settings': () => ({ status: 200, body: { companyName: '', defaultCityStateZip: 'Monroe, NC 28110', phone: '', shopAddress: '', mapsConfigured: false, suggestRoutes: true } }),
   })
   renderRoutes([{ path: '/bookings/new', element: <BookingFormPage /> }], '/bookings/new')
 

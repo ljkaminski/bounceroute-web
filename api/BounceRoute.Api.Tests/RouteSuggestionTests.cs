@@ -173,3 +173,34 @@ public sealed class RouteSuggestionTests : IAsyncLifetime
 		return await response.ReadAsync<BookingDto>();
 	}
 }
+
+public sealed class SuggestionsOffTests : IAsyncLifetime
+{
+	private readonly SuggestionApiFactory factory = new();
+
+	public Task InitializeAsync() => factory.InitializeAsync();
+
+	public Task DisposeAsync() => factory.DisposeAsync();
+
+	[Fact]
+	public async Task Turning_suggestions_off_stops_the_planner_from_running()
+	{
+		var owner = await factory.SignedInClientAsync(Roles.Owner);
+		await owner.PutAsJsonAsync("/api/settings", new SaveCompanySettingsRequest("Test", null, null, "1 Shop Rd, Monroe, NC", SuggestRoutes: false), ApiFactory.Json);
+		var setup = new SaveJobScheduleRequest(DateTimeOffset.Parse("2038-06-05T10:00:00-04:00"), "Truck 1", []);
+		await owner.PostAsJsonAsync("/api/bookings", new SaveBookingRequest(
+			"Manual", null, "1 Manual St", "Monroe, NC 28110", Surface.Grass, null, setup, setup with { ScheduledAt = setup.ScheduledAt.AddHours(6) },
+			[new("Tables", false)]), ApiFactory.Json);
+
+		var suggestion = await (await owner.GetAsync("/api/route/suggestion?date=2038-06-05")).ReadAsync<RouteSuggestionDto>();
+		var settings = await (await owner.GetAsync("/api/settings")).ReadAsync<CompanySettingsDto>();
+
+		Assert.Equal(SuggestionStatus.NotAvailable, suggestion.Status);
+		Assert.False(settings.SuggestRoutes);
+		Assert.Empty(factory.Optimizer.Calls);
+
+		// Saving other settings without the switch leaves it off.
+		await owner.PutAsJsonAsync("/api/settings", new SaveCompanySettingsRequest("Test 2", null, null, "1 Shop Rd, Monroe, NC"), ApiFactory.Json);
+		Assert.False((await (await owner.GetAsync("/api/settings")).ReadAsync<CompanySettingsDto>()).SuggestRoutes);
+	}
+}

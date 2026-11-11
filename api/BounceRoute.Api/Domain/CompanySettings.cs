@@ -20,4 +20,7 @@ public sealed class CompanySettings
 	public double? ShopLatitude { get; set; }
 
 	public double? ShopLongitude { get; set; }
+
+	// When on, the Route page offers a better plan when it finds one. Off means the office plans every day by hand.
+	public bool SuggestRoutes { get; set; } = true;
 }

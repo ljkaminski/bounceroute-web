@@ -104,6 +104,7 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 			settings.Property(s => s.DefaultCityStateZip).HasMaxLength(100);
 			settings.Property(s => s.Phone).HasMaxLength(20);
 			settings.Property(s => s.ShopAddress).HasMaxLength(200);
+			settings.Property(s => s.SuggestRoutes).HasDefaultValue(true);
 			settings.ToTable(table => table.HasCheckConstraint("CK_CompanySettings_Single", "\"Id\" = 1"));
 		});
 

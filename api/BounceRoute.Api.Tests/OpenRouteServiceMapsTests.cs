@@ -39,7 +39,7 @@ public sealed class OpenRouteServiceMapsTests
 
 		var point = await maps.GeocodeAsync("118 Oak Hollow Dr, Monroe, NC 28110");
 
-		Assert.Equal(new GeoPoint(34.98, -80.55), point);
+		Assert.Equal(GeocodeResult.Found(new GeoPoint(34.98, -80.55)), point);
 		Assert.Contains("boundary.country=US", handler.Requests[0].Request.RequestUri!.Query);
 	}
 
@@ -48,7 +48,7 @@ public sealed class OpenRouteServiceMapsTests
 	{
 		var (maps, _) = Create((_, _) => Json("""{"features":[{"geometry":{"coordinates":[-80.58,35.02]},"properties":{"layer":"locality"}}]}"""));
 
-		Assert.Null(await maps.GeocodeAsync("118 Made Up Dr, Monroe, NC 28110"));
+		Assert.Equal(GeocodeResult.NotFound, await maps.GeocodeAsync("118 Made Up Dr, Monroe, NC 28110"));
 	}
 
 	[Fact]
@@ -56,7 +56,22 @@ public sealed class OpenRouteServiceMapsTests
 	{
 		var (maps, _) = Create((_, _) => Json("""{"features":[]}"""));
 
-		Assert.Null(await maps.GeocodeAsync("nowhere"));
+		Assert.Equal(GeocodeResult.NotFound, await maps.GeocodeAsync("nowhere"));
+	}
+
+	[Fact]
+	public async Task Quota_errors_count_as_failed_and_are_not_remembered()
+	{
+		var calls = 0;
+		var (maps, _) = Create((_, _) => ++calls == 1
+			? Json("""{"error":"Quota exceeded"}""", HttpStatusCode.Forbidden)
+			: Json("""{"features":[{"geometry":{"coordinates":[-80.55,34.98]},"properties":{"layer":"street"}}]}"""));
+
+		Assert.Equal(GeocodeOutcome.Failed, (await maps.GeocodeAsync("7 Real St, Monroe, NC")).Outcome);
+		Assert.Equal(GeocodeOutcome.Found, (await maps.GeocodeAsync("7 Real St, Monroe, NC")).Outcome);
+		// Found answers are remembered, so asking again doesn't call the service.
+		await maps.GeocodeAsync("7 real st, monroe, nc");
+		Assert.Equal(2, calls);
 	}
 
 	[Fact]

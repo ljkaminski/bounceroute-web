@@ -8,16 +8,21 @@ using Microsoft.Extensions.DependencyInjection;
 namespace BounceRoute.Api.Tests;
 
 // Every address is somewhere and every drive takes 15 minutes, so the expected times are easy to check.
+// Set Down to make the service fail the way it does when the daily quota runs out.
 public sealed class FakeMaps : IMaps
 {
 	public List<string> Lookups { get; } = [];
 
+	public bool Down { get; set; }
+
 	public bool IsConfigured => true;
 
-	public Task<GeoPoint?> GeocodeAsync(string address, CancellationToken cancellationToken = default)
+	public Task<GeocodeResult> GeocodeAsync(string address, CancellationToken cancellationToken = default)
 	{
 		Lookups.Add(address);
-		return Task.FromResult<GeoPoint?>(address.Contains("Nowhere") ? null : new GeoPoint(35, -80.5));
+		if (Down)
+			return Task.FromResult(GeocodeResult.Failed);
+		return Task.FromResult(address.Contains("Nowhere") ? GeocodeResult.NotFound : GeocodeResult.Found(new GeoPoint(35, -80.5)));
 	}
 
 	public Task<IReadOnlyList<int?>> DriveMinutesAsync(IReadOnlyList<GeoPoint> points, CancellationToken cancellationToken = default) =>
@@ -111,6 +116,25 @@ public sealed class RoutePlanTests : IAsyncLifetime
 		Assert.False(plan.Trucks[0].DriveTimesComplete);
 		Assert.Equal(1, factory.Maps.Lookups.Count(address => address.Contains("Nowhere")));
 		Assert.Equal(1, factory.Maps.Lookups.Count(address => address.StartsWith("1 A St")));
+	}
+
+	[Fact]
+	public async Task Lookups_that_failed_are_tried_again_once_the_service_is_back()
+	{
+		var combo = await ItemAsync(InventoryCategory.Combo);
+		factory.Maps.Down = true;
+		await owner.PutAsJsonAsync("/api/settings", new SaveCompanySettingsRequest("Test", null, null, "9 New Shop Rd, Monroe, NC"), ApiFactory.Json);
+		await BookAsync("A", "09:00", "Truck 1", combo);
+
+		var whileDown = await PlanAsync();
+		Assert.False(whileDown.ShopAddressSet);
+		Assert.False(whileDown.Trucks[0].DriveTimesComplete);
+
+		factory.Maps.Down = false;
+		var afterwards = await PlanAsync();
+
+		Assert.True(afterwards.ShopAddressSet);
+		Assert.True(afterwards.Trucks[0].DriveTimesComplete);
 	}
 
 	private static readonly string Day = "2036-09-06";

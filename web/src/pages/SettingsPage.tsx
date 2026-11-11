@@ -29,8 +29,9 @@ function SettingsForm({ initial }: { initial: Schemas['CompanySettingsDto'] }) {
     defaultCityStateZip: initial.defaultCityStateZip,
     phone: initial.phone,
     shopAddress: initial.shopAddress,
+    suggestRoutes: initial.suggestRoutes,
   })
-  const set = (key: keyof typeof form, value: string) => setForm((f) => ({ ...f, [key]: value }))
+  const set = (key: Exclude<keyof typeof form, 'suggestRoutes'>, value: string) => setForm((f) => ({ ...f, [key]: value }))
 
   return (
     <form
@@ -60,6 +61,18 @@ function SettingsForm({ initial }: { initial: Schemas['CompanySettingsDto'] }) {
           {initial.mapsConfigured
             ? 'Used to work out drive times to the first stop and back.'
             : "Drive times are off until a map service key is set up, so route plans count setup time only."}
+        </span>
+      </label>
+      <label className="flex items-start gap-3 rounded-xl bg-slate-50 p-3">
+        <input type="checkbox" className="mt-1 size-4 accent-brand" checked={form.suggestRoutes}
+          onChange={(e) => setForm((f) => ({ ...f, suggestRoutes: e.target.checked }))} />
+        <span>
+          <span className="block font-semibold">Suggest better routes</span>
+          <span className="block text-sm text-slate-500">
+            {form.suggestRoutes
+              ? 'On: when there\'s a better way to run a day, the Route page shows it with a "Use this plan" button.'
+              : 'Off: the office picks trucks and times for every booking. The Route page still shows timing and late warnings.'}
+          </span>
         </span>
       </label>
       <label className="block">
