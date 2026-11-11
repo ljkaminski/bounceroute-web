@@ -25,7 +25,8 @@ builder.Services.AddIdentityCore<AppUser>(options =>
 	})
 	.AddRoles<IdentityRole>()
 	.AddEntityFrameworkStores<BounceRouteDbContext>()
-	.AddSignInManager();
+	.AddSignInManager()
+	.AddClaimsPrincipalFactory<AppClaimsFactory>();
 
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme).AddIdentityCookies();
 builder.Services.ConfigureApplicationCookie(options =>

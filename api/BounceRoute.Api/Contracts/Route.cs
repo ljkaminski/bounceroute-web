@@ -28,6 +28,7 @@ public sealed record JobCardDto(
 
 public sealed record RouteDayDto(DateOnly Date, IReadOnlyList<JobCardDto> Jobs);
 
-public sealed record CompleteJobRequest(int CrewMemberId);
+// Office staff say who did the job; crew members complete jobs as themselves and can leave it out.
+public sealed record CompleteJobRequest(int? CrewMemberId);
 
 public sealed record SetItemLoadedRequest(bool IsLoaded);

@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using BounceRoute.Api.Contracts;
 using BounceRoute.Api.Data;
 using BounceRoute.Api.Domain;
@@ -18,6 +19,11 @@ public static class CrewEndpoints
 
 		crew.MapGet("/units", GetUnitTotals)
 			.WithSummary("Units on completed jobs per crew member between two dates (inclusive). Defaults to this weekend, Friday through Monday.");
+
+		app.MapGet("/api/me/units", GetMyUnitTotals)
+			.WithTags("Crew")
+			.WithSummary("The signed-in crew member's own unit totals. Same dates as /api/crew/units.")
+			.RequireAuthorization();
 	}
 
 	private static Task<List<CrewMemberDto>> ListCrew(bool? includeInactive, BounceRouteDbContext db) => db.CrewMembers
@@ -49,8 +55,31 @@ public static class CrewEndpoints
 	private static async Task<UnitTotalsReport> GetUnitTotals(
 		DateOnly? from, DateOnly? to, BounceRouteDbContext db, BusinessClock clock)
 	{
+		var (first, last) = Period(from, to, clock);
+		return new UnitTotalsReport(first, last, await TotalsAsync(db, clock, first, last, onlyCrewMemberId: null));
+	}
+
+	private static async Task<Results<Ok<UnitTotalsReport>, NotFound>> GetMyUnitTotals(
+		DateOnly? from, DateOnly? to, ClaimsPrincipal user, BounceRouteDbContext db, BusinessClock clock)
+	{
+		// Owner or office accounts that are not also on a crew have no units of their own.
+		if (Viewer.From(user).CrewMemberId is not int crewMemberId)
+			return TypedResults.NotFound();
+
+		var (first, last) = Period(from, to, clock);
+		return TypedResults.Ok(new UnitTotalsReport(first, last, await TotalsAsync(db, clock, first, last, crewMemberId)));
+	}
+
+	// Defaults to this weekend, Friday through Monday. A lone "from" means that one day.
+	private static (DateOnly First, DateOnly Last) Period(DateOnly? from, DateOnly? to, BusinessClock clock)
+	{
 		var first = from ?? WeekendStart(clock.Today);
-		var last = to ?? (from is null ? first.AddDays(3) : first);
+		return (first, to ?? (from is null ? first.AddDays(3) : first));
+	}
+
+	private static async Task<List<CrewUnitTotalsDto>> TotalsAsync(
+		BounceRouteDbContext db, BusinessClock clock, DateOnly first, DateOnly last, int? onlyCrewMemberId)
+	{
 		var (start, end) = clock.Range(first, last);
 
 		var credits = await db.Jobs
@@ -61,11 +90,15 @@ public static class CrewEndpoints
 				job.Type,
 				Units = job.Booking.Items.Count(item => item.IsUnit)
 			}))
+			.Where(credit => onlyCrewMemberId == null || credit.CrewMemberId == onlyCrewMemberId)
 			.ToListAsync();
 
-		var crew = await db.CrewMembers.OrderBy(member => member.Name).ToListAsync();
+		var crew = await db.CrewMembers
+			.Where(member => onlyCrewMemberId == null || member.Id == onlyCrewMemberId)
+			.OrderBy(member => member.Name)
+			.ToListAsync();
 
-		var totals = crew
+		return crew
 			.Where(member => member.IsActive || credits.Any(credit => credit.CrewMemberId == member.Id))
 			.Select(member =>
 			{
@@ -75,8 +108,6 @@ public static class CrewEndpoints
 				return new CrewUnitTotalsDto(member.Id, member.Name, member.Initials, mine.Count, setup, pickup, setup + pickup);
 			})
 			.ToList();
-
-		return new UnitTotalsReport(first, last, totals);
 	}
 
 	// The weekend run starts Friday morning and includes Monday pickups, so count from the most recent Friday.

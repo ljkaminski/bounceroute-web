@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using BounceRoute.Api.Contracts;
 using BounceRoute.Api.Data;
 using BounceRoute.Api.Domain;
@@ -27,12 +28,14 @@ public static class RouteEndpoints
 			.WithSummary("Checks or unchecks an item on the loading list.");
 	}
 
-	private static async Task<RouteDayDto> GetRouteDay(DateOnly? date, BounceRouteDbContext db, BusinessClock clock)
+	private static async Task<RouteDayDto> GetRouteDay(DateOnly? date, ClaimsPrincipal user, BounceRouteDbContext db, BusinessClock clock)
 	{
+		var viewer = Viewer.From(user);
 		var day = date ?? clock.Today;
 		var (start, end) = clock.Range(day, day);
 
 		var jobs = await JobCards(db)
+			.VisibleTo(viewer)
 			.Where(job => job.ScheduledAt >= start && job.ScheduledAt < end)
 			.OrderBy(job => job.ScheduledAt)
 			.ToListAsync();
@@ -41,40 +44,44 @@ public static class RouteEndpoints
 		return new RouteDayDto(day, [.. jobs.Select(job => ToCard(job, isNextUp: job == nextUp))]);
 	}
 
-	private static async Task<Results<Ok<JobCardDto>, NotFound>> GetJob(int id, BounceRouteDbContext db, BusinessClock clock)
+	private static async Task<Results<Ok<JobCardDto>, NotFound>> GetJob(int id, ClaimsPrincipal user, BounceRouteDbContext db, BusinessClock clock)
 	{
-		var job = await JobCards(db).FirstOrDefaultAsync(job => job.Id == id);
+		var viewer = Viewer.From(user);
+		var job = await JobCards(db).VisibleTo(viewer).FirstOrDefaultAsync(job => job.Id == id);
 		if (job is null)
 			return TypedResults.NotFound();
 
-		return TypedResults.Ok(ToCard(job, await IsNextUpAsync(db, clock, job)));
+		return TypedResults.Ok(ToCard(job, await IsNextUpAsync(db, clock, viewer, job)));
 	}
 
 	private static async Task<Results<Ok<JobCardDto>, NotFound, ValidationProblem>> CompleteJob(
-		int id, CompleteJobRequest request, BounceRouteDbContext db, BusinessClock clock, TimeProvider time)
+		int id, CompleteJobRequest request, ClaimsPrincipal user, BounceRouteDbContext db, BusinessClock clock, TimeProvider time)
 	{
-		var job = await JobCards(db).FirstOrDefaultAsync(job => job.Id == id);
+		var viewer = Viewer.From(user);
+		var job = await JobCards(db).VisibleTo(viewer).FirstOrDefaultAsync(job => job.Id == id);
 		if (job is null)
 			return TypedResults.NotFound();
 
-		if (!await db.CrewMembers.AnyAsync(crew => crew.Id == request.CrewMemberId))
-			return TypedResults.ValidationProblem(new Dictionary<string, string[]>
-			{
-				[nameof(request.CrewMemberId)] = ["No crew member with that id."]
-			});
+		// Crew can only sign off as themselves.
+		var completedBy = viewer.IsOffice ? request.CrewMemberId : viewer.CrewMemberId;
+		if (!viewer.IsOffice && request.CrewMemberId is not null && request.CrewMemberId != viewer.CrewMemberId)
+			return CrewMemberProblem("Crew members can only complete jobs as themselves.");
+		var crewMember = completedBy is int crewId ? await db.CrewMembers.FindAsync(crewId) : null;
+		if (crewMember is null)
+			return CrewMemberProblem("No crew member with that id.");
 
 		job.Status = JobStatus.Done;
 		job.CompletedAt = time.GetUtcNow();
-		job.CompletedByCrewMemberId = request.CrewMemberId;
+		job.CompletedBy = crewMember;
 		await db.SaveChangesAsync();
-		await db.Entry(job).Reference(j => j.CompletedBy).LoadAsync();
 
-		return TypedResults.Ok(ToCard(job, await IsNextUpAsync(db, clock, job)));
+		return TypedResults.Ok(ToCard(job, await IsNextUpAsync(db, clock, viewer, job)));
 	}
 
-	private static async Task<Results<Ok<JobCardDto>, NotFound>> ReopenJob(int id, BounceRouteDbContext db, BusinessClock clock)
+	private static async Task<Results<Ok<JobCardDto>, NotFound>> ReopenJob(int id, ClaimsPrincipal user, BounceRouteDbContext db, BusinessClock clock)
 	{
-		var job = await JobCards(db).FirstOrDefaultAsync(job => job.Id == id);
+		var viewer = Viewer.From(user);
+		var job = await JobCards(db).VisibleTo(viewer).FirstOrDefaultAsync(job => job.Id == id);
 		if (job is null)
 			return TypedResults.NotFound();
 
@@ -84,12 +91,14 @@ public static class RouteEndpoints
 		job.CompletedBy = null;
 		await db.SaveChangesAsync();
 
-		return TypedResults.Ok(ToCard(job, await IsNextUpAsync(db, clock, job)));
+		return TypedResults.Ok(ToCard(job, await IsNextUpAsync(db, clock, viewer, job)));
 	}
 
-	private static async Task<Results<Ok<BookingItemDto>, NotFound>> SetItemLoaded(int id, SetItemLoadedRequest request, BounceRouteDbContext db)
+	private static async Task<Results<Ok<BookingItemDto>, NotFound>> SetItemLoaded(
+		int id, SetItemLoadedRequest request, ClaimsPrincipal user, BounceRouteDbContext db)
 	{
-		var item = await db.BookingItems.FindAsync(id);
+		var visibleBookings = db.Jobs.VisibleTo(Viewer.From(user)).Select(job => job.BookingId);
+		var item = await db.BookingItems.FirstOrDefaultAsync(item => item.Id == id && visibleBookings.Contains(item.BookingId));
 		if (item is null)
 			return TypedResults.NotFound();
 
@@ -98,19 +107,23 @@ public static class RouteEndpoints
 		return TypedResults.Ok(new BookingItemDto(item.Id, item.Name, item.IsUnit, item.IsLoaded));
 	}
 
+	private static ValidationProblem CrewMemberProblem(string message) =>
+		TypedResults.ValidationProblem(new Dictionary<string, string[]> { [nameof(CompleteJobRequest.CrewMemberId)] = [message] });
+
 	private static IQueryable<Job> JobCards(BounceRouteDbContext db) => db.Jobs
 		.Include(job => job.Booking).ThenInclude(booking => booking.Items)
 		.Include(job => job.Assignments).ThenInclude(assignment => assignment.CrewMember)
 		.Include(job => job.CompletedBy)
 		.AsSplitQuery();
 
-	// Next up is the first job of that day that is not done yet.
-	private static async Task<bool> IsNextUpAsync(BounceRouteDbContext db, BusinessClock clock, Job job)
+	// Next up is the first job of that day (of the viewer's jobs) that is not done yet.
+	private static async Task<bool> IsNextUpAsync(BounceRouteDbContext db, BusinessClock clock, Viewer viewer, Job job)
 	{
 		var day = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(job.ScheduledAt, clock.TimeZone).DateTime);
 		var (start, end) = clock.Range(day, day);
 
 		var firstOpenId = await db.Jobs
+			.VisibleTo(viewer)
 			.Where(j => j.ScheduledAt >= start && j.ScheduledAt < end && j.Status != JobStatus.Done)
 			.OrderBy(j => j.ScheduledAt)
 			.Select(j => (int?)j.Id)

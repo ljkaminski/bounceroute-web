@@ -5,6 +5,47 @@
     "version": "1.0.0"
   },
   "paths": {
+    "/api/me/units": {
+      "get": {
+        "tags": [
+          "Crew"
+        ],
+        "summary": "The signed-in crew member's own unit totals. Same dates as /api/crew/units.",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitTotalsReport"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/api/auth/login": {
       "post": {
         "tags": [
@@ -724,7 +765,10 @@
         "type": "object",
         "properties": {
           "crewMemberId": {
-            "type": "integer",
+            "type": [
+              "null",
+              "integer"
+            ],
             "format": "int32"
           }
         }
@@ -1268,6 +1312,9 @@
   },
   "tags": [
     {
+      "name": "Crew"
+    },
+    {
       "name": "Auth"
     },
     {
@@ -1275,9 +1322,6 @@
     },
     {
       "name": "Bookings"
-    },
-    {
-      "name": "Crew"
     }
   ]
 }
