@@ -114,7 +114,10 @@ if (!generatingOpenApi)
 		scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>(), app.Configuration, app.Logger);
 
 	if (app.Environment.IsDevelopment())
+	{
 		await DevSeed.SeedAsync(db, scope.ServiceProvider.GetRequiredService<BusinessClock>());
+		await DevSeed.SeedAccountsAsync(db, scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>());
+	}
 }
 
 app.Run();
