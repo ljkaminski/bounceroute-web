@@ -50,3 +50,11 @@ export const formatDay = (key: string) =>
 
 export const formatShortDateTime = (iso: string) =>
   new Date(iso).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+
+// 75 -> "1 hr 15 min", 45 -> "45 min"
+export function formatMinutes(total: number): string {
+  const hours = Math.floor(total / 60)
+  const minutes = total % 60
+  if (hours === 0) return `${minutes} min`
+  return minutes === 0 ? `${hours} hr` : `${hours} hr ${minutes} min`
+}

@@ -1,4 +1,4 @@
-import { addDays, fromDateTimeInput, monthRange, toDateTimeInput, weekendStart } from './dates'
+import { addDays, formatMinutes, fromDateTimeInput, monthRange, toDateTimeInput, weekendStart } from './dates'
 
 describe('weekendStart', () => {
   it.each([
@@ -25,4 +25,8 @@ describe('date helpers', () => {
     expect(iso).toBe('2026-11-14T14:30:00.000Z')
     expect(toDateTimeInput(iso)).toBe('2026-11-14T09:30')
   })
+})
+
+it('formats durations the way people say them', () => {
+  expect([formatMinutes(45), formatMinutes(60), formatMinutes(75)]).toEqual(['45 min', '1 hr', '1 hr 15 min'])
 })

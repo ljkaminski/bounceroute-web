@@ -1,9 +1,10 @@
 import { Link, useSearchParams } from 'react-router'
-import { useRouteDay } from '../api/hooks'
+import { useRouteDay, useRoutePlan } from '../api/hooks'
 import { isOffice } from '../auth/roles'
 import { useCurrentUser } from '../auth/useAuth'
 import { EmptyState, ErrorBox, Loading } from '../components/Feedback'
 import { JobCardRow } from '../components/JobCardRow'
+import { TruckPlanCard } from '../components/TruckPlanCard'
 import { addDays, formatDay, today } from '../lib/dates'
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
@@ -12,6 +13,8 @@ export function RoutePage() {
   const [params, setParams] = useSearchParams()
   const date = params.get('date') ?? today()
   const route = useRouteDay(date)
+  const plan = useRoutePlan(date)
+  const plannedStops = new Map(plan.data?.trucks.flatMap((truck) => truck.stops).map((stop) => [stop.jobId, stop]))
   const office = isOffice(useCurrentUser().data)
   const goTo = (day: string) => setParams(day === today() ? {} : { date: day })
 
@@ -71,13 +74,22 @@ export function RoutePage() {
           )}
         </EmptyState>
       ) : (
-        <ol className="space-y-3">
-          {jobs.map((job) => (
-            <li key={job.jobId}>
-              <JobCardRow job={job} />
-            </li>
-          ))}
-        </ol>
+        <>
+          {plan.data && plan.data.trucks.length > 0 && (
+            <section aria-label="Truck plans" className="grid gap-3 sm:grid-cols-2">
+              {plan.data.trucks.map((truck) => (
+                <TruckPlanCard key={truck.truck} plan={truck} route={plan.data} />
+              ))}
+            </section>
+          )}
+          <ol className="space-y-3">
+            {jobs.map((job) => (
+              <li key={job.jobId}>
+                <JobCardRow job={job} plan={plannedStops.get(job.jobId)} />
+              </li>
+            ))}
+          </ol>
+        </>
       )}
     </div>
   )

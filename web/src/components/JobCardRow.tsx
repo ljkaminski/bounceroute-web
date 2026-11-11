@@ -1,9 +1,9 @@
 import { Link } from 'react-router'
-import type { JobCard } from '../api/client'
-import { formatTime } from '../lib/dates'
+import type { JobCard, PlannedStop } from '../api/client'
+import { formatMinutes, formatTime } from '../lib/dates'
 import { CrewChips, StatusBadge, TypeBadge } from './Badges'
 
-export function JobCardRow({ job }: { job: JobCard }) {
+export function JobCardRow({ job, plan }: { job: JobCard; plan?: PlannedStop }) {
   const units = job.units.length
   const wet = job.units.some((unit) => unit.isWet)
   return (
@@ -29,6 +29,16 @@ export function JobCardRow({ job }: { job: JobCard }) {
           {job.truck && ` · ${job.truck}`}
           {wet && <span className="font-semibold text-sky-700"> · Wet</span>}
         </div>
+        {plan && job.status !== 'Done' && (
+          <div className="mt-1 text-xs text-slate-600">
+            ~{formatMinutes(plan.workMinutes)} on site
+            {plan.driveMinutesBefore !== null && ` · ${formatMinutes(plan.driveMinutesBefore)} drive`}
+            {' · '}done ~{formatTime(plan.finishAt)}
+            {plan.minutesLate > 0 && (
+              <span className="font-semibold text-red-700"> · arrives {formatMinutes(plan.minutesLate)} late</span>
+            )}
+          </div>
+        )}
       </div>
       <div className="hidden shrink-0 self-center sm:block">
         <CrewChips crew={job.crew} />
