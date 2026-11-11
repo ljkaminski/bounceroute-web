@@ -32,6 +32,7 @@ it('goes back to the bookings list after deleting, even though the booking is no
       return { status: 204 }
     },
     'GET /api/crew': () => ({ status: 200, body: [] }),
+    'GET /api/trucks': () => ({ status: 200, body: [] }),
     'GET /api/inventory': () => ({ status: 200, body: [] }),
     'GET /api/inventory/availability': () => ({ status: 200, body: [] }),
     'GET /api/settings': () => ({ status: 200, body: { companyName: '', defaultCityStateZip: '', phone: '', shopAddress: '', mapsConfigured: false } }),
@@ -50,4 +51,27 @@ it('goes back to the bookings list after deleting, even though the booking is no
   // Re-fetching the deleted booking is what made the page sometimes land on "Not found." instead of the list.
   const afterDelete = calls.slice(calls.findIndex((call) => call.method === 'DELETE') + 1)
   expect(afterDelete.filter((call) => call.path === '/api/bookings/7')).toEqual([])
+})
+
+it('moves the crew times when the party time changes', async () => {
+  mockApi({
+    'GET /api/crew': () => ({ status: 200, body: [] }),
+    'GET /api/trucks': () => ({ status: 200, body: [{ id: 1, name: 'Truck 1', capacity: 6, isActive: true, crewMemberIds: [] }] }),
+    'GET /api/inventory': () => ({ status: 200, body: [] }),
+    'GET /api/inventory/availability': () => ({ status: 200, body: [] }),
+    'GET /api/settings': () => ({ status: 200, body: { companyName: '', defaultCityStateZip: 'Monroe, NC 28110', phone: '', shopAddress: '', mapsConfigured: false } }),
+  })
+  renderRoutes([{ path: '/bookings/new', element: <BookingFormPage /> }], '/bookings/new')
+
+  const partyStarts = await screen.findByLabelText('Party starts')
+  const partyEnds = screen.getByLabelText('Party ends')
+  await userEvent.clear(partyStarts)
+  await userEvent.type(partyStarts, '2026-11-21T13:00')
+  await userEvent.clear(partyEnds)
+  await userEvent.type(partyEnds, '2026-11-21T17:30')
+
+  const [setupArrives, pickupArrives] = screen.getAllByLabelText(/Crew arrives/)
+  expect(setupArrives).toHaveValue('2026-11-21T12:00')
+  expect(pickupArrives).toHaveValue('2026-11-21T17:30')
+  expect(screen.getAllByRole('combobox', { name: 'Truck' })[0]).toHaveValue('Truck 1')
 })
