@@ -20,6 +20,10 @@ public static class AuthEndpoints
 
 		auth.MapPost("/logout", Logout).RequireAuthorization();
 
+		auth.MapPost("/password", ChangePassword)
+			.WithSummary("Changes the signed-in user's own password.")
+			.RequireAuthorization();
+
 		auth.MapGet("/me", Me)
 			.WithSummary("The signed-in user, or 401.")
 			.RequireAuthorization();
@@ -46,6 +50,24 @@ public static class AuthEndpoints
 	private static async Task<NoContent> Logout(SignInManager<AppUser> signIn)
 	{
 		await signIn.SignOutAsync();
+		return TypedResults.NoContent();
+	}
+
+	private static async Task<Results<NoContent, UnauthorizedHttpResult, ValidationProblem>> ChangePassword(
+		ChangePasswordRequest request, ClaimsPrincipal principal, UserManager<AppUser> users, SignInManager<AppUser> signIn)
+	{
+		var user = await users.GetUserAsync(principal);
+		if (user is null)
+			return TypedResults.Unauthorized();
+
+		var changed = await users.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+		if (!changed.Succeeded)
+			return changed.Errors.Any(error => error.Code == nameof(IdentityErrorDescriber.PasswordMismatch))
+				? TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["CurrentPassword"] = ["Current password is incorrect."] })
+				: UserEndpoints.IdentityProblem(changed);
+
+		// Changing the password signs out other devices; keep this one signed in.
+		await signIn.RefreshSignInAsync(user);
 		return TypedResults.NoContent();
 	}
 

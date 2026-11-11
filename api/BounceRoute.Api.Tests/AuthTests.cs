@@ -78,3 +78,26 @@ public sealed class LoginRateLimitTests(LoginRateLimitTests.LimitedApiFactory fa
 		}
 	}
 }
+
+public sealed class ChangePasswordTests(ApiFactory factory) : IClassFixture<ApiFactory>
+{
+	[Fact]
+	public async Task User_changes_their_own_password_and_stays_signed_in()
+	{
+		var client = await factory.SignedInClientAsync(Roles.Office);
+		var me = await (await client.GetAsync("/api/auth/me")).ReadAsync<CurrentUserDto>();
+
+		var wrong = await client.PostAsJsonAsync("/api/auth/password",
+			new ChangePasswordRequest("not-my-password", "a-whole-new-password"), ApiFactory.Json);
+		Assert.Equal(HttpStatusCode.BadRequest, wrong.StatusCode);
+
+		var changed = await client.PostAsJsonAsync("/api/auth/password",
+			new ChangePasswordRequest(ApiFactory.Password, "a-whole-new-password"), ApiFactory.Json);
+		Assert.Equal(HttpStatusCode.NoContent, changed.StatusCode);
+		Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/auth/me")).StatusCode);
+
+		var signIn = await factory.CreateClient().PostAsJsonAsync("/api/auth/login",
+			new LoginRequest(me.Email, "a-whole-new-password"), ApiFactory.Json);
+		Assert.Equal(HttpStatusCode.OK, signIn.StatusCode);
+	}
+}
