@@ -4,6 +4,8 @@ import { isOffice } from '../auth/roles'
 import { useCurrentUser } from '../auth/useAuth'
 import { EmptyState, ErrorBox, Loading } from '../components/Feedback'
 import { JobCardRow } from '../components/JobCardRow'
+import { SuggestionCard } from '../components/SuggestionCard'
+import { TrucksOutPicker } from '../components/TrucksOutPicker'
 import { TruckPlanCard } from '../components/TruckPlanCard'
 import { addDays, formatDay, today } from '../lib/dates'
 
@@ -55,6 +57,9 @@ export function RoutePage() {
           </button>
         </div>
       </div>
+
+      {office && <TrucksOutPicker date={date} />}
+      {office && jobs.length > 0 && <SuggestionCard key={date} date={date} />}
 
       {route.isPending ? (
         <Loading what="Loading route" />
