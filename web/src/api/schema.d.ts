@@ -478,6 +478,104 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/route/suggestion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A better plan for the day (which truck takes which stop, and when), if there is one. */
+        get: {
+            parameters: {
+                query: {
+                    date: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RouteSuggestionDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/route/suggestion/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Uses the suggested plan. Refused if the day changed since the suggestion was shown. */
+        post: {
+            parameters: {
+                query: {
+                    date: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ApplySuggestionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RoutePlanSummary"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/bookings": {
         parameters: {
             query?: never;
@@ -1613,6 +1711,9 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ApplySuggestionRequest: {
+            fingerprint: string;
+        };
         BookingDto: {
             /** Format: int32 */
             id: number;
@@ -1849,6 +1950,14 @@ export interface components {
             /** Format: date-time */
             partyStartsAt: null | string;
         };
+        PlanSummaryDto: {
+            /** Format: int32 */
+            lateStops: number;
+            /** Format: date-time */
+            allDoneAt: null | string;
+            /** Format: int32 */
+            trucksUsed: number;
+        };
         ResetPasswordRequest: {
             newPassword: string;
         };
@@ -1863,6 +1972,21 @@ export interface components {
             mapsConfigured: boolean;
             shopAddressSet: boolean;
             trucks: components["schemas"]["TruckPlanDto"][];
+        };
+        RoutePlanSummary: {
+            /** Format: int32 */
+            jobsChanged: number;
+        };
+        RouteSuggestionDto: {
+            /** Format: date */
+            date: string;
+            status: components["schemas"]["SuggestionStatus"];
+            reason: null | string;
+            current: null | components["schemas"]["PlanSummaryDto"];
+            suggested: null | components["schemas"]["PlanSummaryDto"];
+            changes: components["schemas"]["SuggestedChangeDto"][];
+            cantFit: string[];
+            fingerprint: null | string;
         };
         SaveBookingItemRequest: {
             name: null | string;
@@ -1942,6 +2066,20 @@ export interface components {
         SetItemLoadedRequest: {
             isLoaded: boolean;
         };
+        SuggestedChangeDto: {
+            /** Format: int32 */
+            jobId: number;
+            type: components["schemas"]["JobType"];
+            customerName: string;
+            fromTruck: string;
+            toTruck: string;
+            /** Format: date-time */
+            fromTime: string;
+            /** Format: date-time */
+            toTime: string;
+        };
+        /** @enum {unknown} */
+        SuggestionStatus: "Better" | "AlreadyBest" | "NotAvailable";
         /** @enum {unknown} */
         Surface: "Grass" | "Concrete" | "Gravel" | "Inside";
         TruckDto: {

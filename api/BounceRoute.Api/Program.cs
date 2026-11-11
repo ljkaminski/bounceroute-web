@@ -76,15 +76,22 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMemoryCache();
 var mapsKey = builder.Configuration[OpenRouteServiceMaps.ApiKeySetting];
 if (string.IsNullOrWhiteSpace(mapsKey))
+{
 	builder.Services.AddSingleton<IMaps, NoMaps>();
+	builder.Services.AddSingleton<IRouteOptimizer, NoRouteOptimizer>();
+}
 else
-	builder.Services.AddHttpClient<IMaps, OpenRouteServiceMaps>(client =>
+{
+	void UseOpenRouteService(HttpClient client)
 	{
 		client.BaseAddress = new Uri("https://api.openrouteservice.org/");
 		// OpenRouteService wants the bare key, which isn't a "scheme value" pair, so skip header validation.
 		client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", mapsKey);
-		client.Timeout = TimeSpan.FromSeconds(10);
-	});
+		client.Timeout = TimeSpan.FromSeconds(20);
+	}
+	builder.Services.AddHttpClient<IMaps, OpenRouteServiceMaps>(UseOpenRouteService);
+	builder.Services.AddHttpClient<IRouteOptimizer, OpenRouteServiceOptimizer>(UseOpenRouteService);
+}
 builder.Services.AddSingleton(services => new BusinessClock(
 	TimeZoneInfo.FindSystemTimeZoneById(builder.Configuration["Business:TimeZone"] ?? "America/New_York"),
 	services.GetRequiredService<TimeProvider>()));
@@ -114,6 +121,7 @@ app.MapHealthChecks("/health");
 app.MapAuthEndpoints();
 app.MapRouteEndpoints();
 app.MapRoutePlanEndpoints();
+app.MapRouteSuggestionEndpoints();
 app.MapBookingEndpoints();
 app.MapCrewEndpoints();
 app.MapInventoryEndpoints();

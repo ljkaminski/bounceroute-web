@@ -119,3 +119,41 @@ public sealed class MapsConfigurationTests
 		Assert.IsType<OpenRouteServiceMaps>(maps);
 	}
 }
+
+public sealed class OpenRouteServiceOptimizerTests
+{
+	private sealed class Handler(string reply) : HttpMessageHandler
+	{
+		public string Sent { get; private set; } = "";
+
+		protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+		{
+			Sent = await request.Content!.ReadAsStringAsync(cancellationToken);
+			return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(reply, Encoding.UTF8, "application/json") };
+		}
+	}
+
+	[Fact]
+	public async Task Sends_deadlines_and_capacity_and_reads_back_start_times()
+	{
+		var start = DateTimeOffset.FromUnixTimeSeconds(1_900_000_000);
+		var handler = new Handler($$"""
+			{"routes":[{"vehicle":2,"steps":[{"type":"start"},{"type":"job","job":7,"arrival":{{start.ToUnixTimeSeconds() + 600}},"waiting_time":300},{"type":"end"}]}],
+			 "unassigned":[{"id":9}]}
+			""");
+		var optimizer = new OpenRouteServiceOptimizer(new HttpClient(handler) { BaseAddress = new Uri("https://api.openrouteservice.org/") },
+			NullLogger<OpenRouteServiceOptimizer>.Instance);
+
+		var result = await optimizer.OptimizeAsync(
+			[new(7, new(35.0, -80.5), StopKind.Setup, 30, 2, start, start.AddHours(3)), new(9, new(35.1, -80.6), StopKind.Pickup, 30, 1, start, start.AddHours(9))],
+			[new(2, 6, new(35.2, -80.7), start, start.AddHours(16))]);
+
+		Assert.Contains("\"delivery\":[2]", handler.Sent);
+		Assert.Contains("\"pickup\":[1]", handler.Sent);
+		Assert.Contains("\"capacity\":[6]", handler.Sent);
+		Assert.Contains("\"service\":1800", handler.Sent);
+		var step = Assert.Single(Assert.Single(result!.Routes).Steps);
+		Assert.Equal((7, start.AddMinutes(15)), (step.StopId, step.StartAt)); // 10 min drive + 5 min wait
+		Assert.Equal([9], result.Unassigned);
+	}
+}

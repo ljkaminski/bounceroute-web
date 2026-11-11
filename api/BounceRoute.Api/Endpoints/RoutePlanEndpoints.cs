@@ -32,18 +32,30 @@ public static class RoutePlanEndpoints
 			.ToListAsync(cancellationToken);
 
 		var settings = await db.CompanySettings.FindAsync([CompanySettings.SingletonId], cancellationToken);
-		GeoPoint? shop = settings is { ShopLatitude: double lat, ShopLongitude: double lon } ? new GeoPoint(lat, lon) : null;
+		var shop = ShopPoint(settings);
 
 		if (maps.IsConfigured)
 			await LocateAsync(jobs.Select(job => job.Booking).Distinct(), db, maps, cancellationToken);
 
 		var times = await SetupTimes.LoadAsync(db);
-		var trucks = new List<TruckPlanDto>();
-		foreach (var truck in jobs.GroupBy(job => string.IsNullOrWhiteSpace(job.Truck) ? "No truck" : job.Truck).OrderBy(group => group.Key))
-			trucks.Add(await PlanTruckAsync(truck.Key, [.. truck], shop, times, maps, cancellationToken));
-
+		var trucks = await PlanTrucksAsync(jobs, shop, times, maps, cancellationToken);
 		return new RoutePlanDto(day, maps.IsConfigured, shop is not null, trucks);
 	}
+
+	internal const string NoTruck = "No truck";
+
+	// Groups a day's jobs by truck and plans each truck in scheduled order.
+	internal static async Task<List<TruckPlanDto>> PlanTrucksAsync(
+		IEnumerable<Job> jobs, GeoPoint? shop, IReadOnlyDictionary<InventoryCategory, int> times, IMaps maps, CancellationToken cancellationToken)
+	{
+		var trucks = new List<TruckPlanDto>();
+		foreach (var truck in jobs.GroupBy(job => string.IsNullOrWhiteSpace(job.Truck) ? NoTruck : job.Truck).OrderBy(group => group.Key))
+			trucks.Add(await PlanTruckAsync(truck.Key, [.. truck.OrderBy(job => job.ScheduledAt)], shop, times, maps, cancellationToken));
+		return trucks;
+	}
+
+	internal static GeoPoint? ShopPoint(CompanySettings? settings) =>
+		settings is { ShopLatitude: double lat, ShopLongitude: double lon } ? new GeoPoint(lat, lon) : null;
 
 	private static async Task<TruckPlanDto> PlanTruckAsync(
 		string truck, List<Job> stops, GeoPoint? shop, IReadOnlyDictionary<InventoryCategory, int> times, IMaps maps, CancellationToken cancellationToken)
@@ -134,7 +146,7 @@ public static class RoutePlanEndpoints
 
 	// Looks up map positions for bookings never looked up, or whose address changed since, and saves them.
 	// An address that wasn't found isn't retried until someone edits it, so it doesn't eat the daily quota.
-	private static async Task LocateAsync(IEnumerable<Booking> bookings, BounceRouteDbContext db, IMaps maps, CancellationToken cancellationToken)
+	internal static async Task LocateAsync(IEnumerable<Booking> bookings, BounceRouteDbContext db, IMaps maps, CancellationToken cancellationToken)
 	{
 		var changed = false;
 		foreach (var booking in bookings.Where(booking => booking.GeocodedAddress != booking.FullAddress))

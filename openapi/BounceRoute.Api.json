@@ -366,6 +366,98 @@
         }
       }
     },
+    "/api/route/suggestion": {
+      "get": {
+        "tags": [
+          "Route"
+        ],
+        "summary": "A better plan for the day (which truck takes which stop, and when), if there is one.",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteSuggestionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/route/suggestion/apply": {
+      "post": {
+        "tags": [
+          "Route"
+        ],
+        "summary": "Uses the suggested plan. Refused if the day changed since the suggestion was shown.",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplySuggestionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutePlanSummary"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/bookings": {
       "get": {
         "tags": [
@@ -1495,6 +1587,17 @@
   },
   "components": {
     "schemas": {
+      "ApplySuggestionRequest": {
+        "required": [
+          "fingerprint"
+        ],
+        "type": "object",
+        "properties": {
+          "fingerprint": {
+            "type": "string"
+          }
+        }
+      },
       "BookingDto": {
         "required": [
           "id",
@@ -2336,6 +2439,31 @@
           }
         }
       },
+      "PlanSummaryDto": {
+        "required": [
+          "lateStops",
+          "allDoneAt",
+          "trucksUsed"
+        ],
+        "type": "object",
+        "properties": {
+          "lateStops": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "allDoneAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "trucksUsed": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "ResetPasswordRequest": {
         "required": [
           "newPassword"
@@ -2390,6 +2518,84 @@
             "items": {
               "$ref": "#/components/schemas/TruckPlanDto"
             }
+          }
+        }
+      },
+      "RoutePlanSummary": {
+        "required": [
+          "jobsChanged"
+        ],
+        "type": "object",
+        "properties": {
+          "jobsChanged": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "RouteSuggestionDto": {
+        "required": [
+          "date",
+          "status",
+          "reason",
+          "current",
+          "suggested",
+          "changes",
+          "cantFit",
+          "fingerprint"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SuggestionStatus"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "current": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlanSummaryDto"
+              }
+            ]
+          },
+          "suggested": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlanSummaryDto"
+              }
+            ]
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SuggestedChangeDto"
+            }
+          },
+          "cantFit": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "fingerprint": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -2764,6 +2970,51 @@
             "type": "boolean"
           }
         }
+      },
+      "SuggestedChangeDto": {
+        "required": [
+          "jobId",
+          "type",
+          "customerName",
+          "fromTruck",
+          "toTruck",
+          "fromTime",
+          "toTime"
+        ],
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "type": {
+            "$ref": "#/components/schemas/JobType"
+          },
+          "customerName": {
+            "type": "string"
+          },
+          "fromTruck": {
+            "type": "string"
+          },
+          "toTruck": {
+            "type": "string"
+          },
+          "fromTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "toTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SuggestionStatus": {
+        "enum": [
+          "Better",
+          "AlreadyBest",
+          "NotAvailable"
+        ]
       },
       "Surface": {
         "enum": [
