@@ -2,7 +2,7 @@
 
 Scheduling and route management for a party rental company that delivers bounce houses, water slides, and other inflatables.
 
-The office books rentals, builds each day's route, and assigns trucks and crews. Crews sign in on their phones to see their own stops in order, check items off as they load them, and mark jobs complete. Crew pay is based on how many units (bounce houses, slides) each person set up or picked up, so the app counts those automatically.
+The office books rentals from the company's inventory, builds each day's route, and assigns trucks and crews. The app won't let a unit be double-booked. Crews sign in on their phones to see their own stops in order, check items off as they load them, and mark jobs complete. Crew pay is based on how many units (bounce houses, slides) each person set up or picked up, so the app counts those automatically.
 
 ![Today's route](docs/screenshots/route.png)
 
@@ -13,6 +13,10 @@ The office books rentals, builds each day's route, and assigns trucks and crews.
 | Crew view on a phone | Owner's account management |
 | --- | --- |
 | ![Crew route on a phone](docs/screenshots/crew-mobile.png) | ![Accounts](docs/screenshots/accounts.png) |
+
+| Booking with inventory, wet/dry, and availability | Inventory |
+| --- | --- |
+| ![Booking form](docs/screenshots/booking-form.png) | ![Inventory](docs/screenshots/inventory.png) |
 
 ## Stack
 
@@ -35,9 +39,11 @@ Changing a request or response type in C# changes the OpenAPI file, which change
 
 ## How the data fits together
 
-- A **booking** is one customer rental: address, ground surface, site notes, and the **items** going out.
+- **Inventory** is what the company owns: category, how many copies, size, wet/dry use, power, and price.
+- A **booking** is one customer rental: address, ground surface, site notes, and the **items** going out. Items are picked from inventory (with wet or dry chosen when a unit can go either way) or typed in as one-offs.
 - Every booking has exactly two **jobs**: a setup and a pickup. Each job has its own time, truck, and crew (via **job assignments**).
-- An item is either a **unit** (counts toward pay) or an **extra** like a generator (doesn't).
+- An item is either a **unit** (counts toward pay) or an **extra** like a generator (doesn't). Booked items copy their name and pay rule from inventory, so editing the catalog later doesn't rewrite old bookings.
+- **No double-booking.** A booking holds its items from setup until pickup. Saving is refused if overlapping bookings already use every copy the company owns. Saves run under a Postgres advisory lock so two people can't take the last unit at the same moment, and a test proves that race is caught.
 - Pay totals = units on *completed* jobs a crew member was assigned to. The "weekend" runs Friday through Monday, since Monday pickups belong to the weekend.
 - Job times are stored in UTC. A day's route is computed in the business time zone (`Business:TimeZone`, default `America/New_York`), so an 11 PM job stays on the right day and days with DST changes are handled. Tests cover both.
 
@@ -56,6 +62,15 @@ How it works:
 - **Rules live in the API.** Endpoint groups require a role policy, and crew queries are filtered to their assigned jobs (someone else's job returns 404, not 403, so ids don't leak). The React app hides screens a role can't use, but that's only for convenience.
 - **The crew link is in the cookie.** A crew account's crew member id is a claim, so filtering by crew member needs no extra lookup. Role changes, disables, and password resets update the security stamp, and open sessions pick that up within a minute.
 - **Guessing is slowed down.** Accounts lock for a few minutes after 5 wrong passwords, and login is rate-limited to 10 tries a minute per IP address. Passwords need at least 10 characters with no composition rules (NIST 800-63B).
+
+## Company data stays private
+
+The repo is generic; nothing about a specific company is in the code. The company name and default town are **Settings** the owner fills in, and the real inventory is loaded into the database:
+
+- **One at a time** on the Inventory page, or
+- **All at once** with *Import from file* (a JSON list, matched by name so re-importing updates instead of duplicating).
+
+Keep company files in `private/`, which git ignores. Development databases start with made-up sample inventory and bookings instead.
 
 ## Run it locally
 
@@ -117,7 +132,7 @@ api/BounceRoute.Api.Tests/   integration tests against real Postgres, incl. who-
 web/src/
   api/           generated schema, typed client, React Query hooks
   auth/          current user, sign-in/out, route guards
-  pages/         Route, Job, Bookings, Booking form, Crew & pay, My units, Accounts, Sign in
+  pages/         Route, Job, Bookings, Booking form, Inventory, Crew & pay, My units, Accounts, Settings, Sign in
   components/    layout, job card, badges
 openapi/         generated OpenAPI document (committed)
 ```
@@ -128,6 +143,7 @@ openapi/         generated OpenAPI document (committed)
 - [ ] Deploy (API + Postgres + static site) with a public demo
 - [ ] Connect the .NET MAUI crew app to this API, keeping SQLite as an offline cache
 - [ ] Text crews when their schedule changes
-- [ ] Customer availability calendar so units can't be double-booked
+- [x] Inventory with quantities, wet/dry, and double-booking prevention
+- [ ] Calendar view of what's booked when
 
 All names, addresses, and phone numbers in the seed data and screenshots are made up.
