@@ -12,11 +12,11 @@ public static class DevSeed
 	public static async Task SeedAccountsAsync(BounceRouteDbContext db, UserManager<AppUser> users)
 	{
 		if (await users.FindByEmailAsync("office@example.com") is null)
-			await AccountSeed.CreateAsync(users, "office@example.com", "bounceroute-office", "Office Demo", Roles.Office);
+			await AccountSeed.CreateAsync(users, "office@example.com", "bounceroute2026", "Office Demo", Roles.Office);
 
 		var jordan = await db.CrewMembers.FirstOrDefaultAsync(crew => crew.Name == "Jordan Hale");
 		if (jordan is not null && await users.FindByEmailAsync("jordan@example.com") is null)
-			await AccountSeed.CreateAsync(users, "jordan@example.com", "bounceroute-crew", jordan.Name, Roles.Crew, jordan.Id);
+			await AccountSeed.CreateAsync(users, "jordan@example.com", "bounceroute2026", jordan.Name, Roles.Crew, jordan.Id);
 	}
 
 	public static async Task SeedAsync(BounceRouteDbContext db, BusinessClock clock)

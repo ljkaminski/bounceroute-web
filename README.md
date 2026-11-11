@@ -79,13 +79,13 @@ npm run dev
 
 OpenAPI JSON is served at http://localhost:5125/openapi/v1.json.
 
-Demo sign-ins (Development only):
+Demo sign-ins (Development only). All three use the same password, with no symbols so it types the same on any keyboard:
 
 | Email | Password | Role |
 | --- | --- | --- |
-| owner@example.com | bounceroute-owner | Owner |
-| office@example.com | bounceroute-office | Office |
-| jordan@example.com | bounceroute-crew | Crew (Jordan Hale) |
+| owner@example.com | bounceroute2026 | Owner |
+| office@example.com | bounceroute2026 | Office |
+| jordan@example.com | bounceroute2026 | Crew (Jordan Hale) |
 
 ## Tests
 

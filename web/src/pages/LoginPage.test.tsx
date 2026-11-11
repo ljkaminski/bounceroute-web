@@ -36,12 +36,12 @@ it('goes to the app after signing in', async () => {
   renderRoutes(routes, '/login')
 
   await userEvent.type(await screen.findByLabelText('Email'), 'jordan@example.com')
-  await userEvent.type(screen.getByLabelText('Password'), 'bounceroute-crew')
+  await userEvent.type(screen.getByLabelText('Password'), 'bounceroute2026')
   await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
 
   expect(await screen.findByText('Home')).toBeInTheDocument()
   expect(calls.find((call) => call.method === 'POST')?.body).toEqual({
     email: 'jordan@example.com',
-    password: 'bounceroute-crew',
+    password: 'bounceroute2026',
   })
 })
