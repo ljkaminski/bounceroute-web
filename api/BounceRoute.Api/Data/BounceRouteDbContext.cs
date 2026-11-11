@@ -40,6 +40,7 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 			booking.Property(b => b.CityStateZip).HasMaxLength(100);
 			booking.Property(b => b.SiteNotes).HasMaxLength(500);
 			booking.Property(b => b.Surface).HasConversion<string>().HasMaxLength(20);
+			booking.Property(b => b.GeocodedAddress).HasMaxLength(260);
 		});
 
 		model.Entity<Job>(job =>
@@ -78,6 +79,7 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 			settings.Property(s => s.CompanyName).HasMaxLength(100);
 			settings.Property(s => s.DefaultCityStateZip).HasMaxLength(100);
 			settings.Property(s => s.Phone).HasMaxLength(20);
+			settings.Property(s => s.ShopAddress).HasMaxLength(200);
 			settings.ToTable(table => table.HasCheckConstraint("CK_CompanySettings_Single", "\"Id\" = 1"));
 		});
 

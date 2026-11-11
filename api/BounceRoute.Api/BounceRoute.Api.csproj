@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- Writes openapi/BounceRoute.Api.json on build; the web app generates its TypeScript types from it. -->
     <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/../../openapi</OpenApiDocumentsDirectory>
+    <UserSecretsId>02120b5c-3a8e-4036-88fb-7f9d72799ac0</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

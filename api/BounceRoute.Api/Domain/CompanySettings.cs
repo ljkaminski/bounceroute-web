@@ -13,4 +13,11 @@ public sealed class CompanySettings
 	public string DefaultCityStateZip { get; set; } = string.Empty;
 
 	public string Phone { get; set; } = string.Empty;
+
+	// Where the trucks leave from and come back to each day.
+	public string ShopAddress { get; set; } = string.Empty;
+
+	public double? ShopLatitude { get; set; }
+
+	public double? ShopLongitude { get; set; }
 }

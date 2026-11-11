@@ -121,10 +121,20 @@ namespace BounceRoute.Api.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("GeocodedAddress")
+                        .HasMaxLength(260)
+                        .HasColumnType("character varying(260)");
+
                     b.Property<int>("JobNumber")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValueSql("nextval('job_numbers')");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("double precision");
 
                     b.Property<string>("Phone")
                         .IsRequired()
@@ -269,6 +279,17 @@ namespace BounceRoute.Api.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<string>("ShopAddress")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<double?>("ShopLatitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("ShopLongitude")
+                        .HasColumnType("double precision");
 
                     b.HasKey("Id");
 

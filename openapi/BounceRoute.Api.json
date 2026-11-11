@@ -1455,7 +1455,9 @@
         "required": [
           "companyName",
           "defaultCityStateZip",
-          "phone"
+          "phone",
+          "shopAddress",
+          "mapsConfigured"
         ],
         "type": "object",
         "properties": {
@@ -1467,6 +1469,12 @@
           },
           "phone": {
             "type": "string"
+          },
+          "shopAddress": {
+            "type": "string"
+          },
+          "mapsConfigured": {
+            "type": "boolean"
           }
         }
       },
@@ -2144,6 +2152,13 @@
           },
           "phone": {
             "maxLength": 20,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "shopAddress": {
+            "maxLength": 200,
             "type": [
               "null",
               "string"

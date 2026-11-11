@@ -1431,6 +1431,8 @@ export interface components {
             companyName: string;
             defaultCityStateZip: string;
             phone: string;
+            shopAddress: string;
+            mapsConfigured: boolean;
         };
         CompleteJobRequest: {
             /** Format: int32 */
@@ -1608,6 +1610,7 @@ export interface components {
             companyName: null | string;
             defaultCityStateZip: null | string;
             phone: null | string;
+            shopAddress?: null | string;
         };
         SaveCrewMemberRequest: {
             name: string;

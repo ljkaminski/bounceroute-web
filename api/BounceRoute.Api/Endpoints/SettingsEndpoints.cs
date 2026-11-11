@@ -1,6 +1,7 @@
 using BounceRoute.Api.Contracts;
 using BounceRoute.Api.Data;
 using BounceRoute.Api.Domain;
+using BounceRoute.Api.Maps;
 using Microsoft.EntityFrameworkCore;
 
 namespace BounceRoute.Api.Endpoints;
@@ -20,10 +21,10 @@ public static class SettingsEndpoints
 		settings.MapPut("/setup-times", SaveSetupTimes).RequireAuthorization(Policies.Owner);
 	}
 
-	private static async Task<CompanySettingsDto> GetSettings(BounceRouteDbContext db) =>
-		ToDto(await db.CompanySettings.FindAsync(CompanySettings.SingletonId) ?? new CompanySettings());
+	private static async Task<CompanySettingsDto> GetSettings(BounceRouteDbContext db, IMaps maps) =>
+		ToDto(await db.CompanySettings.FindAsync(CompanySettings.SingletonId) ?? new CompanySettings(), maps);
 
-	private static async Task<CompanySettingsDto> SaveSettings(SaveCompanySettingsRequest request, BounceRouteDbContext db)
+	private static async Task<CompanySettingsDto> SaveSettings(SaveCompanySettingsRequest request, BounceRouteDbContext db, IMaps maps)
 	{
 		var settings = await db.CompanySettings.FindAsync(CompanySettings.SingletonId);
 		if (settings is null)
@@ -35,8 +36,18 @@ public static class SettingsEndpoints
 		settings.CompanyName = request.CompanyName?.Trim() ?? string.Empty;
 		settings.DefaultCityStateZip = request.DefaultCityStateZip?.Trim() ?? string.Empty;
 		settings.Phone = request.Phone?.Trim() ?? string.Empty;
+
+		var shop = request.ShopAddress?.Trim() ?? string.Empty;
+		if (shop != settings.ShopAddress)
+		{
+			settings.ShopAddress = shop;
+			var point = shop.Length == 0 ? null : await maps.GeocodeAsync(shop);
+			settings.ShopLatitude = point?.Latitude;
+			settings.ShopLongitude = point?.Longitude;
+		}
+
 		await db.SaveChangesAsync();
-		return ToDto(settings);
+		return ToDto(settings, maps);
 	}
 
 	private static async Task<List<CategorySetupTimeDto>> GetSetupTimes(BounceRouteDbContext db) =>
@@ -55,6 +66,6 @@ public static class SettingsEndpoints
 		return await GetSetupTimes(db);
 	}
 
-	private static CompanySettingsDto ToDto(CompanySettings settings) =>
-		new(settings.CompanyName, settings.DefaultCityStateZip, settings.Phone);
+	private static CompanySettingsDto ToDto(CompanySettings settings, IMaps maps) =>
+		new(settings.CompanyName, settings.DefaultCityStateZip, settings.Phone, settings.ShopAddress, maps.IsConfigured);
 }

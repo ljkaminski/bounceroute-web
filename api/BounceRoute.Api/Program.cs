@@ -4,6 +4,7 @@ using System.Threading.RateLimiting;
 using BounceRoute.Api.Data;
 using BounceRoute.Api.Domain;
 using BounceRoute.Api.Endpoints;
+using BounceRoute.Api.Maps;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -69,6 +70,20 @@ builder.Services.AddRateLimiter(options =>
 });
 
 builder.Services.AddSingleton(TimeProvider.System);
+
+// Drive times come from OpenRouteService when a key is set (keep it in user secrets or an environment
+// variable, never in this repo). Without one the app still runs and route plans skip drive times.
+builder.Services.AddMemoryCache();
+var mapsKey = builder.Configuration[OpenRouteServiceMaps.ApiKeySetting];
+if (string.IsNullOrWhiteSpace(mapsKey))
+	builder.Services.AddSingleton<IMaps, NoMaps>();
+else
+	builder.Services.AddHttpClient<IMaps, OpenRouteServiceMaps>(client =>
+	{
+		client.BaseAddress = new Uri("https://api.openrouteservice.org/");
+		client.DefaultRequestHeaders.Add("Authorization", mapsKey);
+		client.Timeout = TimeSpan.FromSeconds(10);
+	});
 builder.Services.AddSingleton(services => new BusinessClock(
 	TimeZoneInfo.FindSystemTimeZoneById(builder.Configuration["Business:TimeZone"] ?? "America/New_York"),
 	services.GetRequiredService<TimeProvider>()));

@@ -20,6 +20,16 @@ public sealed class Booking
 
 	public string SiteNotes { get; set; } = string.Empty;
 
+	// Map position, looked up from the address the first time a route plan needs it.
+	// GeocodedAddress is the address it was looked up for, so an edited address gets looked up again.
+	public double? Latitude { get; set; }
+
+	public double? Longitude { get; set; }
+
+	public string? GeocodedAddress { get; set; }
+
+	public string FullAddress => string.IsNullOrWhiteSpace(CityStateZip) ? Street : $"{Street}, {CityStateZip}";
+
 	public DateTimeOffset CreatedAt { get; set; }
 
 	public DateTimeOffset UpdatedAt { get; set; }
