@@ -205,6 +205,7 @@ public static class BookingEndpoints
 				Name = name,
 				IsUnit = isUnit,
 				InventoryItemId = owned?.Id,
+				InventoryItem = owned,
 				IsWet = owned?.WaterUse switch
 				{
 					WaterUse.DryOnly => false,
@@ -231,7 +232,7 @@ public static class BookingEndpoints
 	private static Task<Booking?> LoadAsync(BounceRouteDbContext db, int id, bool tracked = false)
 	{
 		var query = db.Bookings
-			.Include(booking => booking.Items)
+			.Include(booking => booking.Items).ThenInclude(item => item.InventoryItem)
 			.Include(booking => booking.Jobs).ThenInclude(job => job.Assignments)
 			.AsSplitQuery();
 
@@ -239,7 +240,8 @@ public static class BookingEndpoints
 	}
 
 	internal static BookingItemDto ToDto(BookingItem item) =>
-		new(item.Id, item.Name, item.IsUnit, item.IsLoaded, item.InventoryItemId, item.IsWet);
+		new(item.Id, item.Name, item.IsUnit, item.IsLoaded, item.InventoryItemId, item.IsWet,
+			item.InventoryItem is { } owned ? InventoryEndpoints.PhotoUrl(owned.Id, owned.PhotoVersion) : null);
 
 	private static BookingDto ToDto(Booking booking) => new(
 		booking.Id,

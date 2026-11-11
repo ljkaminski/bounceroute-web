@@ -98,7 +98,9 @@ public static class RouteEndpoints
 		int id, SetItemLoadedRequest request, ClaimsPrincipal user, BounceRouteDbContext db)
 	{
 		var visibleBookings = db.Jobs.VisibleTo(Viewer.From(user)).Select(job => job.BookingId);
-		var item = await db.BookingItems.FirstOrDefaultAsync(item => item.Id == id && visibleBookings.Contains(item.BookingId));
+		var item = await db.BookingItems
+			.Include(item => item.InventoryItem)
+			.FirstOrDefaultAsync(item => item.Id == id && visibleBookings.Contains(item.BookingId));
 		if (item is null)
 			return TypedResults.NotFound();
 
@@ -111,7 +113,7 @@ public static class RouteEndpoints
 		TypedResults.ValidationProblem(new Dictionary<string, string[]> { [nameof(CompleteJobRequest.CrewMemberId)] = [message] });
 
 	private static IQueryable<Job> JobCards(BounceRouteDbContext db) => db.Jobs
-		.Include(job => job.Booking).ThenInclude(booking => booking.Items)
+		.Include(job => job.Booking).ThenInclude(booking => booking.Items).ThenInclude(item => item.InventoryItem)
 		.Include(job => job.Assignments).ThenInclude(assignment => assignment.CrewMember)
 		.Include(job => job.CompletedBy)
 		.AsSplitQuery();

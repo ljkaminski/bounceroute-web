@@ -111,3 +111,29 @@ public sealed class InventoryPhotoTests(ApiFactory factory) : IClassFixture<ApiF
 		return office.PutAsync($"/api/inventory/{itemId}/photo", content);
 	}
 }
+
+public sealed class BookingPhotoTests(ApiFactory factory) : IClassFixture<ApiFactory>
+{
+	[Fact]
+	public async Task Crew_see_the_unit_photo_on_their_job()
+	{
+		var office = await factory.SignedInClientAsync(Roles.Office);
+		var member = await (await office.PostAsJsonAsync("/api/crew", new SaveCrewMemberRequest("Photo Crew", null, "Crew"), ApiFactory.Json))
+			.ReadAsync<CrewMemberDto>();
+		var item = await (await office.PostAsJsonAsync("/api/inventory",
+			InventoryTests.Item($"Photo Combo {Guid.NewGuid():N}") with { WaterUse = WaterUse.DryOnly }, ApiFactory.Json)).ReadAsync<InventoryItemDto>();
+		var photo = new ByteArrayContent([0xFF, 0xD8, 0xFF, 0xE0, 0, 0]);
+		photo.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+		var withPhoto = await (await office.PutAsync($"/api/inventory/{item.Id}/photo", photo)).ReadAsync<InventoryItemDto>();
+
+		var setup = new SaveJobScheduleRequest(DateTimeOffset.Parse("2034-07-01T09:00:00-04:00"), "Truck 1", [member.Id]);
+		var booking = await (await office.PostAsJsonAsync("/api/bookings", new SaveBookingRequest(
+			"Photo Test", null, "5 Test St", null, Surface.Grass, null, setup, setup with { ScheduledAt = setup.ScheduledAt.AddHours(6) },
+			[new(null, false, item.Id)]), ApiFactory.Json)).ReadAsync<BookingDto>();
+		Assert.Equal(withPhoto.PhotoUrl, booking.Items[0].PhotoUrl);
+
+		var crew = await factory.SignedInClientAsync(Roles.Crew, member.Id);
+		var job = await (await crew.GetAsync($"/api/jobs/{booking.Setup.Id}")).ReadAsync<JobCardDto>();
+		Assert.Equal(withPhoto.PhotoUrl, Assert.Single(job.Units).PhotoUrl);
+	}
+}

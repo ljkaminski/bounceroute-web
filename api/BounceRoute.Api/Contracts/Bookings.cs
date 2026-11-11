@@ -3,7 +3,7 @@ using BounceRoute.Api.Domain;
 
 namespace BounceRoute.Api.Contracts;
 
-public sealed record BookingItemDto(int Id, string Name, bool IsUnit, bool IsLoaded, int? InventoryItemId, bool? IsWet);
+public sealed record BookingItemDto(int Id, string Name, bool IsUnit, bool IsLoaded, int? InventoryItemId, bool? IsWet, string? PhotoUrl);
 
 public sealed record JobScheduleDto(
 	int Id,

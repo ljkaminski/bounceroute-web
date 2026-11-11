@@ -1342,6 +1342,7 @@ export interface components {
             /** Format: int32 */
             inventoryItemId: null | number;
             isWet: null | boolean;
+            photoUrl: null | string;
         };
         BookingSummaryDto: {
             /** Format: int32 */

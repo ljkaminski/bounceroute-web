@@ -1279,7 +1279,8 @@
           "isUnit",
           "isLoaded",
           "inventoryItemId",
-          "isWet"
+          "isWet",
+          "photoUrl"
         ],
         "type": "object",
         "properties": {
@@ -1307,6 +1308,12 @@
             "type": [
               "null",
               "boolean"
+            ]
+          },
+          "photoUrl": {
+            "type": [
+              "null",
+              "string"
             ]
           }
         }
