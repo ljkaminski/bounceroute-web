@@ -6,6 +6,7 @@ import { isOffice } from '../auth/roles'
 import { useCurrentUser } from '../auth/useAuth'
 import { CrewChips, StatusBadge, TypeBadge } from '../components/Badges'
 import { ErrorBox, Loading } from '../components/Feedback'
+import { UnitPhoto } from '../components/UnitPhoto'
 import { formatShortDateTime, formatTime, toDateKey } from '../lib/dates'
 
 export function JobPage() {
@@ -116,6 +117,7 @@ function LoadList({ title, items }: { title: string; items: JobCard['units'] }) 
                 disabled={setLoaded.isPending}
                 onChange={(event) => setLoaded.mutate({ itemId: item.id, isLoaded: event.target.checked })}
               />
+              {item.photoUrl && <UnitPhoto url={item.photoUrl} name={item.name} size="sm" link={false} />}
               <span className={item.isLoaded ? 'text-slate-400 line-through' : ''}>{item.name}</span>
               {item.isWet === true && <span className="rounded bg-sky-100 px-1.5 text-xs font-semibold text-sky-800">Wet</span>}
               {item.isWet === false && <span className="rounded bg-slate-100 px-1.5 text-xs font-semibold text-slate-600">Dry</span>}

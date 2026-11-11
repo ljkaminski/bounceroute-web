@@ -4,6 +4,7 @@ import { useAvailability, useInventory } from '../api/hooks'
 import { fromDateTimeInput } from '../lib/dates'
 import { newBookingItem, type BookingItemForm } from '../lib/bookingItems'
 import { categoryLabels, groupByCategory, sizeText } from '../lib/inventory'
+import { UnitPhoto } from './UnitPhoto'
 
 const toIso = (value: string) => {
   try {
@@ -65,6 +66,7 @@ export function BookingItemsEditor(props: {
             const overbooked = owned && (free(owned.id) ?? 0) < 0
             return (
               <li key={line.key} className="flex flex-wrap items-center gap-3 px-3 py-2">
+                {owned && <UnitPhoto url={owned.photoUrl} name={line.name} size="sm" />}
                 <div className="min-w-40 flex-1">
                   <div className="font-medium">{line.name}</div>
                   <div className="text-xs text-slate-500">
