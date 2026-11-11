@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router'
 import { isOffice } from '../auth/roles'
+import { useSettings } from '../api/hooks'
 import { useCurrentUser, useLogout } from '../auth/useAuth'
 
 const officeLinks = [
@@ -9,7 +10,11 @@ const officeLinks = [
   { to: '/crew', label: 'Crew & pay', end: false },
 ]
 
-const ownerLinks = [...officeLinks, { to: '/accounts', label: 'Accounts', end: false }]
+const ownerLinks = [
+  ...officeLinks,
+  { to: '/accounts', label: 'Accounts', end: false },
+  { to: '/settings', label: 'Settings', end: false },
+]
 
 const crewLinks = [
   { to: '/', label: 'My route', end: true },
@@ -19,6 +24,7 @@ const crewLinks = [
 export function Layout() {
   const me = useCurrentUser().data
   const logout = useLogout()
+  const companyName = useSettings().data?.companyName
   const links = me?.role === 'Owner' ? ownerLinks : isOffice(me) ? officeLinks : crewLinks
 
   return (
@@ -27,8 +33,9 @@ export function Layout() {
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-8 gap-y-2 px-4 py-3">
           <NavLink to="/" className="flex items-center gap-2 text-lg font-bold">
             <img src="/favicon.svg" alt="" className="size-7" />
-            <span>
+            <span className="leading-tight">
               Bounce<span className="text-brand">Route</span>
+              {companyName && <span className="block text-xs font-medium text-slate-400">{companyName}</span>}
             </span>
           </NavLink>
           <nav className="-mx-1 flex gap-1 overflow-x-auto text-sm font-medium">

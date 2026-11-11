@@ -18,6 +18,7 @@ import { ChangePasswordPage } from './pages/ChangePasswordPage'
 import { LoginPage } from './pages/LoginPage'
 import { MyUnitsPage } from './pages/MyUnitsPage'
 import { RoutePage } from './pages/RoutePage'
+import { SettingsPage } from './pages/SettingsPage'
 
 // When the session runs out mid-use, any 401 sends the app back to the sign-in page.
 const signOutOn401 = (error: Error) => {
@@ -59,7 +60,10 @@ const router = createBrowserRouter([
           },
           {
             element: <RequireRole roles={['Owner']} />,
-            children: [{ path: 'accounts', element: <AccountsPage /> }],
+            children: [
+              { path: 'accounts', element: <AccountsPage /> },
+              { path: 'settings', element: <SettingsPage /> },
+            ],
           },
         ],
       },

@@ -17,6 +17,7 @@ export const keys = {
   units: (from: string, to: string) => ['units', from, to] as const,
   myUnits: (from: string, to: string) => ['my-units', from, to] as const,
   users: ['users'] as const,
+  settings: ['settings'] as const,
   inventory: (includeInactive: boolean) => ['inventory', includeInactive] as const,
   availability: (setupAt: string, pickupAt: string, excludeBookingId?: number) =>
     ['availability', setupAt, pickupAt, excludeBookingId] as const,
@@ -68,6 +69,13 @@ export const useAvailability = (setupAt: string | null, pickupAt: string | null,
         params: { query: { setupAt: setupAt!, pickupAt: pickupAt!, excludeBookingId } },
       })),
     enabled: setupAt !== null && pickupAt !== null && pickupAt > setupAt,
+  })
+
+export const useSettings = () =>
+  useQuery({
+    queryKey: keys.settings,
+    queryFn: () => unwrap(api.GET('/api/settings')),
+    staleTime: 5 * 60_000,
   })
 
 export const useUsers = () =>
@@ -196,6 +204,15 @@ export function useImportInventory() {
   const refresh = useRefreshAll()
   return useMutation({
     mutationFn: (body: SaveInventoryItemRequest[]) => unwrap(api.POST('/api/inventory/import', { body })),
+    onSuccess: refresh,
+  })
+}
+
+export function useSaveSettings() {
+  const refresh = useRefreshAll()
+  return useMutation({
+    mutationFn: (body: { companyName: string; defaultCityStateZip: string; phone: string }) =>
+      unwrap(api.PUT('/api/settings', { body })),
     onSuccess: refresh,
   })
 }

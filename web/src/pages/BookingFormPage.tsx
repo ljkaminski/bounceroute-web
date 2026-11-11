@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ApiError, type Booking, type CrewMember, type SaveBookingRequest, type Surface } from '../api/client'
-import { useBooking, useCrew, useDeleteBooking, useSaveBooking } from '../api/hooks'
+import { useBooking, useCrew, useDeleteBooking, useSaveBooking, useSettings } from '../api/hooks'
 import { BookingItemsEditor } from '../components/BookingItemsEditor'
 import { ErrorBox, Loading } from '../components/Feedback'
 import { newBookingItem, type BookingItemForm } from '../lib/bookingItems'
@@ -24,13 +24,13 @@ type BookingForm = {
 }
 
 
-function blankForm(): BookingForm {
+function blankForm(defaultCityStateZip: string): BookingForm {
   const tomorrow = addDays(today(), 1)
   return {
     customerName: '',
     phone: '',
     street: '',
-    cityStateZip: 'Greenville, NC 27858',
+    cityStateZip: defaultCityStateZip,
     surface: 'Grass',
     siteNotes: '',
     setup: { scheduledAt: `${tomorrow}T09:00`, truck: 'Truck 1', crewMemberIds: [] },
@@ -92,19 +92,23 @@ export function BookingFormPage() {
   const { id } = useParams()
   const bookingId = id === undefined ? undefined : Number(id)
   const booking = useBooking(bookingId)
+  const settings = useSettings()
 
-  if (bookingId === undefined) return <BookingEditor />
+  if (bookingId === undefined) {
+    if (settings.isPending) return <Loading what="Loading" />
+    return <BookingEditor defaultCityStateZip={settings.data?.defaultCityStateZip ?? ''} />
+  }
   if (booking.isPending) return <Loading what="Loading booking" />
   if (booking.isError) return <ErrorBox error={booking.error} />
   return <BookingEditor booking={booking.data} />
 }
 
-function BookingEditor({ booking }: { booking?: Booking }) {
+function BookingEditor({ booking, defaultCityStateZip = '' }: { booking?: Booking; defaultCityStateZip?: string }) {
   const navigate = useNavigate()
   const crew = useCrew()
   const save = useSaveBooking(booking?.id)
   const remove = useDeleteBooking()
-  const [form, setForm] = useState<BookingForm>(() => (booking ? formFrom(booking) : blankForm()))
+  const [form, setForm] = useState<BookingForm>(() => (booking ? formFrom(booking) : blankForm(defaultCityStateZip)))
 
   const set = <K extends keyof BookingForm>(key: K, value: BookingForm[K]) => setForm((f) => ({ ...f, [key]: value }))
   const setSchedule = (which: 'setup' | 'pickup', patch: Partial<ScheduleForm>) =>
