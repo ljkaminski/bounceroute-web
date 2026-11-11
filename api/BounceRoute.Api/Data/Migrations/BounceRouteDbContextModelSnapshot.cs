@@ -535,6 +535,21 @@ namespace BounceRoute.Api.Data.Migrations
                     b.ToTable("TruckCrewMember");
                 });
 
+            modelBuilder.Entity("BounceRoute.Api.Domain.TruckDay", b =>
+                {
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<int>("TruckId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Date", "TruckId");
+
+                    b.HasIndex("TruckId");
+
+                    b.ToTable("TruckDays");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -747,6 +762,15 @@ namespace BounceRoute.Api.Data.Migrations
 
                     b.HasOne("BounceRoute.Api.Domain.Truck", null)
                         .WithMany("Crew")
+                        .HasForeignKey("TruckId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BounceRoute.Api.Domain.TruckDay", b =>
+                {
+                    b.HasOne("BounceRoute.Api.Domain.Truck", null)
+                        .WithMany()
                         .HasForeignKey("TruckId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

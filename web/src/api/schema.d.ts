@@ -1355,6 +1355,79 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/route/trucks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Which trucks go out on a day (defaults to every truck in service). */
+        get: {
+            parameters: {
+                query: {
+                    date: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TrucksOutDto"];
+                    };
+                };
+            };
+        };
+        /** Picks which trucks go out on a day. An empty list goes back to every truck. */
+        put: {
+            parameters: {
+                query: {
+                    date: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveTrucksOutRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TrucksOutDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users": {
         parameters: {
             query?: never;
@@ -1849,6 +1922,9 @@ export interface components {
             isActive: boolean;
             crewMemberIds: null | number[];
         };
+        SaveTrucksOutRequest: {
+            truckIds: number[];
+        };
         SetItemLoadedRequest: {
             isLoaded: boolean;
         };
@@ -1877,6 +1953,12 @@ export interface components {
             driveMinutes: number;
             driveTimesComplete: boolean;
             stops: components["schemas"]["PlannedStopDto"][];
+        };
+        TrucksOutDto: {
+            /** Format: date */
+            date: string;
+            truckIds: number[];
+            isDefault: boolean;
         };
         UnitTotalsReport: {
             /** Format: date */

@@ -64,3 +64,33 @@ public sealed class TruckTests(ApiFactory factory) : IClassFixture<ApiFactory>
 		Assert.Equal((0, 2), (generator.TruckSpace, bigSlide.TruckSpace));
 	}
 }
+
+public sealed class TrucksOutTests : IAsyncLifetime
+{
+	private readonly ApiFactory factory = new();
+
+	public Task InitializeAsync() => factory.InitializeAsync();
+
+	public Task DisposeAsync() => factory.DisposeAsync();
+
+	[Fact]
+	public async Task A_day_uses_every_truck_until_the_office_picks_some()
+	{
+		var owner = await factory.SignedInClientAsync(Roles.Owner);
+		var one = await (await owner.PostAsJsonAsync("/api/trucks", new SaveTruckRequest("Truck A", 6, true, []), ApiFactory.Json)).ReadAsync<TruckDto>();
+		var two = await (await owner.PostAsJsonAsync("/api/trucks", new SaveTruckRequest("Truck B", 6, true, []), ApiFactory.Json)).ReadAsync<TruckDto>();
+		await owner.PostAsJsonAsync("/api/trucks", new SaveTruckRequest("Truck C", 6, IsActive: false, []), ApiFactory.Json);
+
+		var before = await (await owner.GetAsync("/api/route/trucks?date=2037-02-07")).ReadAsync<TrucksOutDto>();
+		Assert.True(before.IsDefault);
+		Assert.Equal([one.Id, two.Id], before.TruckIds);
+
+		var picked = await (await owner.PutAsJsonAsync("/api/route/trucks?date=2037-02-07", new SaveTrucksOutRequest([two.Id]), ApiFactory.Json))
+			.ReadAsync<TrucksOutDto>();
+		Assert.False(picked.IsDefault);
+		Assert.Equal([two.Id], picked.TruckIds);
+
+		var otherDay = await (await owner.GetAsync("/api/route/trucks?date=2037-02-08")).ReadAsync<TrucksOutDto>();
+		Assert.True(otherDay.IsDefault);
+	}
+}

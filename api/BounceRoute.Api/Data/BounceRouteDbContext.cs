@@ -26,6 +26,8 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 
 	public DbSet<Truck> Trucks => Set<Truck>();
 
+	public DbSet<TruckDay> TruckDays => Set<TruckDay>();
+
 	protected override void OnModelCreating(ModelBuilder model)
 	{
 		base.OnModelCreating(model);
@@ -66,6 +68,12 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 			truck.Property(t => t.Name).HasMaxLength(30);
 			truck.HasIndex(t => t.Name).IsUnique();
 			truck.ToTable(table => table.HasCheckConstraint("CK_Trucks_Capacity", "\"Capacity\" >= 1"));
+		});
+
+		model.Entity<TruckDay>(day =>
+		{
+			day.HasKey(d => new { d.Date, d.TruckId });
+			day.HasOne<Truck>().WithMany().HasForeignKey(d => d.TruckId).OnDelete(DeleteBehavior.Cascade);
 		});
 
 		model.Entity<TruckCrewMember>(member =>

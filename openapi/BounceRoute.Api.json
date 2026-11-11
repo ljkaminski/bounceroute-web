@@ -1254,6 +1254,86 @@
         }
       }
     },
+    "/api/route/trucks": {
+      "get": {
+        "tags": [
+          "Trucks"
+        ],
+        "summary": "Which trucks go out on a day (defaults to every truck in service).",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrucksOutDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Trucks"
+        ],
+        "summary": "Picks which trucks go out on a day. An empty list goes back to every truck.",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveTrucksOutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrucksOutDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/users": {
       "get": {
         "tags": [
@@ -2605,6 +2685,21 @@
           }
         }
       },
+      "SaveTrucksOutRequest": {
+        "required": [
+          "truckIds"
+        ],
+        "type": "object",
+        "properties": {
+          "truckIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        }
+      },
       "SetItemLoadedRequest": {
         "required": [
           "isLoaded"
@@ -2707,6 +2802,30 @@
             "items": {
               "$ref": "#/components/schemas/PlannedStopDto"
             }
+          }
+        }
+      },
+      "TrucksOutDto": {
+        "required": [
+          "date",
+          "truckIds",
+          "isDefault"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "truckIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "isDefault": {
+            "type": "boolean"
           }
         }
       },

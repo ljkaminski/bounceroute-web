@@ -14,9 +14,32 @@ public static class TruckEndpoints
 
 		trucks.MapGet("/", ListTrucks).RequireAuthorization(Policies.Office);
 		trucks.MapPost("/", CreateTruck).RequireAuthorization(Policies.Owner);
+		var day = app.MapGroup("/api/route/trucks").WithTags("Trucks").RequireAuthorization(Policies.Office);
+		day.MapGet("/", GetTrucksOut).WithSummary("Which trucks go out on a day (defaults to every truck in service).");
+		day.MapPut("/", SaveTrucksOut).WithSummary("Picks which trucks go out on a day. An empty list goes back to every truck.");
+
 		trucks.MapPut("/{id:int}", UpdateTruck)
 			.WithSummary("Renaming a truck renames it on its jobs too.")
 			.RequireAuthorization(Policies.Owner);
+	}
+
+	private static async Task<TrucksOutDto> GetTrucksOut(DateOnly date, BounceRouteDbContext db)
+	{
+		var (trucks, isDefault) = await TrucksOut.ForDayAsync(db, date);
+		return new TrucksOutDto(date, [.. trucks.Select(truck => truck.Id)], isDefault);
+	}
+
+	private static async Task<Results<Ok<TrucksOutDto>, ValidationProblem>> SaveTrucksOut(
+		DateOnly date, SaveTrucksOutRequest request, BounceRouteDbContext db)
+	{
+		var ids = request.TruckIds.Distinct().ToList();
+		if (await db.Trucks.CountAsync(truck => ids.Contains(truck.Id)) != ids.Count)
+			return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["TruckIds"] = ["One or more trucks do not exist."] });
+
+		await db.TruckDays.Where(row => row.Date == date).ExecuteDeleteAsync();
+		db.TruckDays.AddRange(ids.Select(id => new TruckDay { Date = date, TruckId = id }));
+		await db.SaveChangesAsync();
+		return TypedResults.Ok(await GetTrucksOut(date, db));
 	}
 
 	private static async Task<List<TruckDto>> ListTrucks(BounceRouteDbContext db) =>
