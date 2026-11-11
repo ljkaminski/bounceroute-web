@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { ApiError, type InventoryCategory, type InventoryItem, type SaveInventoryItemRequest, type WaterUse } from '../api/client'
-import { useImportInventory, useInventory, useSaveInventoryItem } from '../api/hooks'
+import { useImportInventory, useInventory, useRemoveInventoryPhoto, useSaveInventoryItem, useUploadInventoryPhoto } from '../api/hooks'
 import { EmptyState, ErrorBox, Loading } from '../components/Feedback'
+import { UnitPhoto } from '../components/UnitPhoto'
 import { categoryLabels, categoryOrder, groupByCategory, price, sizeText, waterUseLabels } from '../lib/inventory'
 
 export function InventoryPage() {
@@ -63,6 +64,7 @@ function ItemRow({ item }: { item: InventoryItem }) {
   return (
     <li className={`p-4 ${item.isActive ? '' : 'opacity-60'}`}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <UnitPhoto url={item.photoUrl} name={item.name} />
         <div className="min-w-48 flex-1">
           <div className="font-semibold">
             {item.name}
@@ -81,8 +83,45 @@ function ItemRow({ item }: { item: InventoryItem }) {
           {editing ? 'Cancel' : 'Edit'}
         </button>
       </div>
-      {editing && <ItemForm item={item} onDone={() => setEditing(false)} />}
+      {editing && (
+        <>
+          <PhotoField item={item} />
+          <ItemForm item={item} onDone={() => setEditing(false)} />
+        </>
+      )}
     </li>
+  )
+}
+
+function PhotoField({ item }: { item: InventoryItem }) {
+  const upload = useUploadInventoryPhoto()
+  const remove = useRemoveInventoryPhoto()
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-4 rounded-xl bg-slate-50 p-4">
+      <UnitPhoto url={item.photoUrl} name={item.name} size="lg" />
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-2">
+          <label className="btn-secondary cursor-pointer">
+            {upload.isPending ? 'Uploading…' : item.photoUrl ? 'Replace photo' : 'Add photo'}
+            {/* On phones this offers the camera as well as the photo library. */}
+            <input type="file" accept="image/*" className="sr-only" disabled={upload.isPending}
+              onChange={(event) => {
+                const file = event.target.files?.[0]
+                if (file) upload.mutate({ itemId: item.id, file })
+                event.target.value = ''
+              }} />
+          </label>
+          {item.photoUrl && (
+            <button type="button" className="btn-danger" disabled={remove.isPending} onClick={() => remove.mutate(item.id)}>
+              Remove photo
+            </button>
+          )}
+        </div>
+        <p className="text-xs text-slate-500">Photos are shrunk before upload, so big phone photos are fine.</p>
+        {upload.isError && <ErrorBox error={upload.error} />}
+      </div>
+    </div>
   )
 }
 

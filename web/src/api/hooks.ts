@@ -7,6 +7,7 @@ import {
   type SaveInventoryItemRequest,
   type UpdateUserRequest,
 } from './client'
+import { shrinkPhoto, uploadPhoto } from '../lib/photos'
 
 export const keys = {
   route: (date: string) => ['route', date] as const,
@@ -213,6 +214,22 @@ export function useSaveSettings() {
   return useMutation({
     mutationFn: (body: { companyName: string; defaultCityStateZip: string; phone: string }) =>
       unwrap(api.PUT('/api/settings', { body })),
+    onSuccess: refresh,
+  })
+}
+
+export function useUploadInventoryPhoto() {
+  const refresh = useRefreshAll()
+  return useMutation({
+    mutationFn: async ({ itemId, file }: { itemId: number; file: File }) => uploadPhoto(itemId, await shrinkPhoto(file)),
+    onSuccess: refresh,
+  })
+}
+
+export function useRemoveInventoryPhoto() {
+  const refresh = useRefreshAll()
+  return useMutation({
+    mutationFn: (itemId: number) => unwrap(api.DELETE('/api/inventory/{id}/photo', { params: { path: { id: itemId } } })),
     onSuccess: refresh,
   })
 }
