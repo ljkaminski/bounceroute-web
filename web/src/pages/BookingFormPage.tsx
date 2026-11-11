@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ApiError, type Booking, type CrewMember, type SaveBookingRequest, type Surface } from '../api/client'
 import { useBooking, useCrew, useDeleteBooking, useSaveBooking } from '../api/hooks'
+import { BookingItemsEditor } from '../components/BookingItemsEditor'
 import { ErrorBox, Loading } from '../components/Feedback'
+import { newBookingItem, type BookingItemForm } from '../lib/bookingItems'
 import { addDays, fromDateTimeInput, toDateKey, toDateTimeInput, today } from '../lib/dates'
 
 const surfaces: Surface[] = ['Grass', 'Concrete', 'Gravel', 'Inside']
 
 type ScheduleForm = { scheduledAt: string; truck: string; crewMemberIds: number[] }
-type ItemForm = { key: number; name: string; isUnit: boolean }
 type BookingForm = {
   customerName: string
   phone: string
@@ -19,11 +20,9 @@ type BookingForm = {
   setup: ScheduleForm
   pickup: ScheduleForm
   sameCrew: boolean
-  items: ItemForm[]
+  items: BookingItemForm[]
 }
 
-let nextItemKey = 1
-const newItem = (name = '', isUnit = true): ItemForm => ({ key: nextItemKey++, name, isUnit })
 
 function blankForm(): BookingForm {
   const tomorrow = addDays(today(), 1)
@@ -37,7 +36,7 @@ function blankForm(): BookingForm {
     setup: { scheduledAt: `${tomorrow}T09:00`, truck: 'Truck 1', crewMemberIds: [] },
     pickup: { scheduledAt: `${tomorrow}T17:00`, truck: 'Truck 1', crewMemberIds: [] },
     sameCrew: true,
-    items: [newItem()],
+    items: [],
   }
 }
 
@@ -59,7 +58,9 @@ function formFrom(booking: Booking): BookingForm {
     sameCrew:
       booking.setup.truck === booking.pickup.truck &&
       booking.setup.crewMemberIds.join() === booking.pickup.crewMemberIds.join(),
-    items: booking.items.map((item) => newItem(item.name, item.isUnit)),
+    items: booking.items.map((item) =>
+      newBookingItem({ inventoryItemId: item.inventoryItemId, name: item.name, isUnit: item.isUnit, isWet: item.isWet }),
+    ),
   }
 }
 
@@ -79,7 +80,11 @@ function toRequest(form: BookingForm): SaveBookingRequest {
     siteNotes: form.siteNotes,
     setup: schedule(form.setup),
     pickup: schedule(pickup),
-    items: form.items.filter((item) => item.name.trim()).map(({ name, isUnit }) => ({ name, isUnit })),
+    items: form.items.map((item) =>
+      item.inventoryItemId === null
+        ? { name: item.name, isUnit: item.isUnit }
+        : { name: null, isUnit: item.isUnit, inventoryItemId: item.inventoryItemId, isWet: item.isWet },
+    ),
   }
 }
 
@@ -104,8 +109,6 @@ function BookingEditor({ booking }: { booking?: Booking }) {
   const set = <K extends keyof BookingForm>(key: K, value: BookingForm[K]) => setForm((f) => ({ ...f, [key]: value }))
   const setSchedule = (which: 'setup' | 'pickup', patch: Partial<ScheduleForm>) =>
     setForm((f) => ({ ...f, [which]: { ...f[which], ...patch } }))
-  const setItem = (key: number, patch: Partial<ItemForm>) =>
-    set('items', form.items.map((item) => (item.key === key ? { ...item, ...patch } : item)))
 
   // The API names fields like "CustomerName" or "Pickup.ScheduledAt".
   const fieldErrors = save.error instanceof ApiError ? save.error.fieldErrors : {}
@@ -191,31 +194,14 @@ function BookingEditor({ booking }: { booking?: Booking }) {
         </ScheduleSection>
       </div>
 
-      <section className="card space-y-3 p-5">
-        <div className="flex items-center justify-between">
-          <h2 className="font-bold">Items</h2>
-          <button type="button" className="btn-secondary" onClick={() => set('items', [...form.items, newItem()])}>
-            Add item
-          </button>
-        </div>
-        <p className="text-xs text-slate-500">Units (bounce houses, slides, slip and slides) count toward crew pay. Extras don't.</p>
-        {form.items.map((item, index) => (
-          <div key={item.key} className="flex items-center gap-2">
-            <input className="field" aria-label={`Item ${index + 1}`} maxLength={80} value={item.name}
-              placeholder="Castle Combo, Generator…" onChange={(e) => setItem(item.key, { name: e.target.value })} />
-            <select className="field w-28" aria-label={`Item ${index + 1} kind`} value={item.isUnit ? 'unit' : 'extra'}
-              onChange={(e) => setItem(item.key, { isUnit: e.target.value === 'unit' })}>
-              <option value="unit">Unit</option>
-              <option value="extra">Extra</option>
-            </select>
-            <button type="button" className="btn-secondary px-3" aria-label={`Remove item ${index + 1}`}
-              onClick={() => set('items', form.items.filter((other) => other.key !== item.key))}>
-              ✕
-            </button>
-          </div>
-        ))}
-        {errorFor('Items') && <p className="text-sm text-red-700">{errorFor('Items')}</p>}
-      </section>
+      <BookingItemsEditor
+        items={form.items}
+        onChange={(items) => set('items', items)}
+        setupAt={form.setup.scheduledAt}
+        pickupAt={form.pickup.scheduledAt}
+        bookingId={booking?.id}
+        error={errorFor('Items')}
+      />
     </form>
   )
 }
