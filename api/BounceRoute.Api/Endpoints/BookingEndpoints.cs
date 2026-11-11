@@ -10,7 +10,7 @@ public static class BookingEndpoints
 {
 	public static void MapBookingEndpoints(this IEndpointRouteBuilder app)
 	{
-		var bookings = app.MapGroup("/api/bookings").WithTags("Bookings");
+		var bookings = app.MapGroup("/api/bookings").WithTags("Bookings").RequireAuthorization(Policies.Office);
 
 		bookings.MapGet("/", ListBookings)
 			.WithSummary("Bookings whose setup falls between two dates (inclusive). Defaults to the next 14 days.");

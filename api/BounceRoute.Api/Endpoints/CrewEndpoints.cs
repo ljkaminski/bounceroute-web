@@ -10,7 +10,7 @@ public static class CrewEndpoints
 {
 	public static void MapCrewEndpoints(this IEndpointRouteBuilder app)
 	{
-		var crew = app.MapGroup("/api/crew").WithTags("Crew");
+		var crew = app.MapGroup("/api/crew").WithTags("Crew").RequireAuthorization(Policies.Office);
 
 		crew.MapGet("/", ListCrew);
 		crew.MapPost("/", CreateCrewMember);

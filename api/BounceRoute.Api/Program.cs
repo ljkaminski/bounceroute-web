@@ -48,7 +48,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 		return Task.CompletedTask;
 	};
 });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(Policies.Add);
 
 // Slows down password guessing from one address; account lockout covers guessing one account.
 builder.Services.AddRateLimiter(options =>

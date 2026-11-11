@@ -5,9 +5,13 @@ using BounceRoute.Api.Domain;
 
 namespace BounceRoute.Api.Tests;
 
-public sealed class BookingTests(ApiFactory factory) : IClassFixture<ApiFactory>
+public sealed class BookingTests(ApiFactory factory) : IClassFixture<ApiFactory>, IAsyncLifetime
 {
-	private readonly HttpClient client = factory.CreateClient();
+	private HttpClient client = null!;
+
+	public async Task InitializeAsync() => client = await factory.SignedInClientAsync(Roles.Office);
+
+	public Task DisposeAsync() => Task.CompletedTask;
 
 	[Fact]
 	public async Task Created_booking_shows_on_the_route_for_its_setup_day()

@@ -10,7 +10,7 @@ public static class RouteEndpoints
 {
 	public static void MapRouteEndpoints(this IEndpointRouteBuilder app)
 	{
-		var api = app.MapGroup("/api").WithTags("Route");
+		var api = app.MapGroup("/api").WithTags("Route").RequireAuthorization();
 
 		api.MapGet("/route", GetRouteDay)
 			.WithSummary("Every job for one day, in order. Defaults to today.");
