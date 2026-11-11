@@ -73,3 +73,24 @@ public sealed class InventoryTests(ApiFactory factory) : IClassFixture<ApiFactor
 		name, InventoryCategory.Combo, IsUnit: true, quantity, WaterUse.WetOrDry, NeedsPower: true,
 		LengthFt: 30, WidthFt: 14, HeightFt: 16, DailyPrice: 250m, Notes: null);
 }
+
+public sealed class InventoryImportTests(ApiFactory factory) : IClassFixture<ApiFactory>
+{
+	[Fact]
+	public async Task Import_adds_new_items_and_updates_existing_ones_by_name()
+	{
+		var office = await factory.SignedInClientAsync(Roles.Office);
+		var existing = $"Existing {Guid.NewGuid():N}";
+		var added = $"Added {Guid.NewGuid():N}";
+		await office.PostAsJsonAsync("/api/inventory", InventoryTests.Item(existing, quantity: 1), ApiFactory.Json);
+
+		var result = await (await office.PostAsJsonAsync("/api/inventory/import",
+			new[] { InventoryTests.Item(existing.ToUpperInvariant(), quantity: 2), InventoryTests.Item(added) }, ApiFactory.Json))
+			.ReadAsync<InventoryImportResult>();
+
+		Assert.Equal(new InventoryImportResult(Created: 1, Updated: 1), result);
+		var list = await (await office.GetAsync("/api/inventory")).ReadAsync<List<InventoryItemDto>>();
+		Assert.Equal(2, list.Single(item => item.Name.Equals(existing, StringComparison.OrdinalIgnoreCase)).Quantity);
+		Assert.Contains(list, item => item.Name == added);
+	}
+}

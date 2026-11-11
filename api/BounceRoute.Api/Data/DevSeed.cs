@@ -42,6 +42,56 @@ public static class DevSeed
 		db.CrewMembers.AddRange(crew);
 		var (jordan, riley, sam, casey, morgan) = (crew[0], crew[1], crew[2], crew[3], crew[4]);
 
+		InventoryItem Owned(string name, InventoryCategory category, bool isUnit, WaterUse water, int quantity, int? length, int? width, int? height, decimal price) => new()
+		{
+			Name = name,
+			Category = category,
+			IsUnit = isUnit,
+			WaterUse = water,
+			Quantity = quantity,
+			NeedsPower = category != InventoryCategory.Game,
+			LengthFt = length,
+			WidthFt = width,
+			HeightFt = height,
+			DailyPrice = price
+		};
+
+		var inventory = new[]
+		{
+			Owned("Castle Combo", InventoryCategory.Combo, true, WaterUse.WetOrDry, 2, 28, 14, 14, 225m),
+			Owned("Dino Bounce House", InventoryCategory.BounceHouse, true, WaterUse.DryOnly, 1, 15, 15, 14, 160m),
+			Owned("Mini Bounce", InventoryCategory.BounceHouse, true, WaterUse.DryOnly, 1, 12, 12, 10, 125m),
+			Owned("Tropical Water Slide", InventoryCategory.WaterSlide, true, WaterUse.WetOnly, 1, 40, 18, 20, 375m),
+			Owned("Obstacle Course", InventoryCategory.ObstacleCourse, true, WaterUse.DryOnly, 1, 40, 10, 13, 290m),
+			Owned("Slip and Slide", InventoryCategory.SlipNSlide, true, WaterUse.WetOnly, 1, 30, 12, 10, 200m),
+			Owned("Generator", InventoryCategory.Equipment, false, WaterUse.None, 2, null, null, null, 90m),
+			Owned("Popcorn Machine", InventoryCategory.Equipment, false, WaterUse.None, 1, null, null, null, 60m),
+			Owned("Cornhole", InventoryCategory.Game, false, WaterUse.None, 1, null, null, null, 30m)
+		};
+		db.InventoryItems.AddRange(inventory);
+		var byName = inventory.ToDictionary(item => item.Name);
+
+		// Items not in the sample inventory (like "Tables (4)") are one-offs typed on the booking.
+		BookingItem Line(string name, bool wet)
+		{
+			if (!byName.TryGetValue(name, out var owned))
+				return new BookingItem { Name = name };
+
+			return new BookingItem
+			{
+				Name = owned.Name,
+				IsUnit = owned.IsUnit,
+				InventoryItem = owned,
+				IsWet = owned.WaterUse switch
+				{
+					WaterUse.WetOnly => true,
+					WaterUse.DryOnly => false,
+					WaterUse.WetOrDry => wet,
+					_ => null
+				}
+			};
+		}
+
 		var today = clock.Today;
 		var now = DateTimeOffset.UtcNow;
 
@@ -50,7 +100,7 @@ public static class DevSeed
 
 		void Add(string customer, string phone, string street, Surface surface, string notes,
 			DateTimeOffset setupAt, DateTimeOffset pickupAt, string truck, CrewMember[] team,
-			string[] units, string[] extras)
+			string[] items, bool wet = false)
 		{
 			Job NewJob(JobType type, DateTimeOffset at)
 			{
@@ -78,26 +128,22 @@ public static class DevSeed
 				CreatedAt = now,
 				UpdatedAt = now,
 				Jobs = [NewJob(JobType.Setup, setupAt), NewJob(JobType.Pickup, pickupAt)],
-				Items =
-				[
-					.. units.Select(name => new BookingItem { Name = name, IsUnit = true }),
-					.. extras.Select(name => new BookingItem { Name = name })
-				]
+				Items = [.. items.Select(name => Line(name, wet))]
 			});
 		}
 
 		Add("Avery Thompson", "(252) 555-0141", "118 Oak Hollow Dr", Surface.Grass, "Gate code 4412. Dog in the side yard.",
-			At(-1, 9), At(-1, 17), "Truck 1", [jordan, riley], ["Castle Combo"], ["Generator"]);
+			At(-1, 9), At(-1, 17), "Truck 1", [jordan, riley], ["Castle Combo", "Generator"], wet: true);
 		Add("Pitt County Parks", "(252) 555-0108", "2000 Cedar Ln", Surface.Grass, "Check in at the shelter office first.",
-			At(0, 8), At(0, 18), "Truck 2", [jordan, riley, sam], ["Tropical Water Slide", "Obstacle Course"], ["Generator", "Cornhole"]);
+			At(0, 8), At(0, 18), "Truck 2", [jordan, riley, sam], ["Tropical Water Slide", "Obstacle Course", "Generator", "Cornhole"]);
 		Add("Quinn Walker", "(252) 555-0177", "406 Ridgeway St", Surface.Concrete, "Driveway setup, sandbags only.",
-			At(0, 9, 30), At(0, 16), "Truck 1", [casey, morgan], ["Dino Bounce House"], []);
+			At(0, 9, 30), At(0, 16), "Truck 1", [casey, morgan], ["Dino Bounce House"]);
 		Add("Harper Lewis", "(252) 555-0163", "77 Lakeview Ct", Surface.Grass, "Backyard through the left gate. Slope near the fence.",
-			At(0, 11), At(1, 10), "Truck 2", [jordan, sam], ["Slip and Slide"], ["Popcorn Machine"]);
+			At(0, 11), At(1, 10), "Truck 2", [jordan, sam], ["Slip and Slide", "Popcorn Machine"]);
 		Add("Elm Street Church", "(252) 555-0190", "512 Elm St", Surface.Inside, "Gym floor. Use tarps under everything.",
-			At(1, 8), At(1, 15), "Truck 1", [casey, riley, morgan], ["Castle Combo", "Mini Bounce"], ["Tables (4)"]);
+			At(1, 8), At(1, 15), "Truck 1", [casey, riley, morgan], ["Castle Combo", "Mini Bounce", "Tables (4)"]);
 		Add("Rowan Mitchell", "(252) 555-0122", "39 Pine Bluff Rd", Surface.Gravel, "Gravel lot: double tarp.",
-			At(2, 10), At(3, 9), "Truck 2", [jordan, riley], ["Tropical Water Slide"], ["Generator"]);
+			At(2, 10), At(3, 9), "Truck 2", [jordan, riley], ["Tropical Water Slide", "Generator"]);
 
 		await db.SaveChangesAsync();
 	}

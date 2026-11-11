@@ -793,6 +793,49 @@
         }
       }
     },
+    "/api/inventory/import": {
+      "post": {
+        "tags": [
+          "Inventory"
+        ],
+        "summary": "Adds or updates many items at once, matched by name (ignoring case). Items not in the list are left alone.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SaveInventoryItemRequest"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryImportResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/inventory/{id}": {
       "put": {
         "tags": [
@@ -1412,6 +1455,23 @@
           "Equipment",
           "Other"
         ]
+      },
+      "InventoryImportResult": {
+        "required": [
+          "created",
+          "updated"
+        ],
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "updated": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
       },
       "InventoryItemDto": {
         "required": [

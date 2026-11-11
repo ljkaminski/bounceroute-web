@@ -861,6 +861,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/inventory/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Adds or updates many items at once, matched by name (ignoring case). Items not in the list are left alone. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveInventoryItemRequest"][];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InventoryImportResult"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/inventory/{id}": {
         parameters: {
             query?: never;
@@ -1219,6 +1268,12 @@ export interface components {
         };
         /** @enum {unknown} */
         InventoryCategory: "BounceHouse" | "Combo" | "WaterSlide" | "ObstacleCourse" | "SlipNSlide" | "Game" | "Equipment" | "Other";
+        InventoryImportResult: {
+            /** Format: int32 */
+            created: number;
+            /** Format: int32 */
+            updated: number;
+        };
         InventoryItemDto: {
             /** Format: int32 */
             id: number;

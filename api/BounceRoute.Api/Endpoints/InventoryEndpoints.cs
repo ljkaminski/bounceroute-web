@@ -16,6 +16,8 @@ public static class InventoryEndpoints
 		inventory.MapGet("/availability", GetAvailability)
 			.WithSummary("How many of each active item are free between setupAt and pickupAt. Pass excludeBookingId when editing a booking.");
 		inventory.MapPost("/", CreateItem);
+		inventory.MapPost("/import", ImportItems)
+			.WithSummary("Adds or updates many items at once, matched by name (ignoring case). Items not in the list are left alone.");
 		inventory.MapPut("/{id:int}", UpdateItem)
 			.WithSummary("Updates an item. Retire items with isActive=false instead of deleting so past bookings keep their history.");
 	}
@@ -55,6 +57,30 @@ public static class InventoryEndpoints
 		db.InventoryItems.Add(item);
 		await db.SaveChangesAsync();
 		return TypedResults.Created($"/api/inventory/{item.Id}", ToDto(item));
+	}
+
+	private static async Task<Results<Ok<InventoryImportResult>, ValidationProblem>> ImportItems(
+		List<SaveInventoryItemRequest> items, BounceRouteDbContext db)
+	{
+		var duplicates = items.GroupBy(item => item.Name.Trim(), StringComparer.OrdinalIgnoreCase).Where(group => group.Count() > 1).Select(group => group.Key).ToList();
+		if (duplicates.Count > 0)
+			return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["Name"] = [$"Listed more than once: {string.Join(", ", duplicates)}."] });
+
+		var existing = await db.InventoryItems.ToDictionaryAsync(item => item.Name, StringComparer.OrdinalIgnoreCase);
+		var created = 0;
+		foreach (var request in items)
+		{
+			if (!existing.TryGetValue(request.Name.Trim(), out var item))
+			{
+				item = new InventoryItem();
+				db.InventoryItems.Add(item);
+				created++;
+			}
+			Apply(request, item);
+		}
+
+		await db.SaveChangesAsync();
+		return TypedResults.Ok(new InventoryImportResult(created, items.Count - created));
 	}
 
 	private static async Task<Results<Ok<InventoryItemDto>, NotFound, ValidationProblem>> UpdateItem(

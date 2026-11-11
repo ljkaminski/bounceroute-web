@@ -32,4 +32,6 @@ public sealed record SaveInventoryItemRequest(
 	[property: MaxLength(500)] string? Notes,
 	bool IsActive = true);
 
+public sealed record InventoryImportResult(int Created, int Updated);
+
 public sealed record InventoryAvailabilityDto(int InventoryItemId, int Quantity, int Booked, int Available);
