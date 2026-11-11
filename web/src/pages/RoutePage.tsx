@@ -6,6 +6,8 @@ import { EmptyState, ErrorBox, Loading } from '../components/Feedback'
 import { JobCardRow } from '../components/JobCardRow'
 import { addDays, formatDay, today } from '../lib/dates'
 
+const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
+
 export function RoutePage() {
   const [params, setParams] = useSearchParams()
   const date = params.get('date') ?? today()
@@ -27,7 +29,7 @@ export function RoutePage() {
           <h1 className="text-2xl font-bold">{formatDay(date)}</h1>
           {jobs.length > 0 && (
             <p className="mt-1 text-sm text-slate-500">
-              {jobs.length} stops · {units} units · {done} of {jobs.length} done
+              {plural(jobs.length, 'stop')} · {plural(units, 'unit')} · {done} of {jobs.length} done
             </p>
           )}
         </div>
