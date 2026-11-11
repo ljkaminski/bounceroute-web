@@ -99,6 +99,7 @@ app.MapAuthEndpoints();
 app.MapRouteEndpoints();
 app.MapBookingEndpoints();
 app.MapCrewEndpoints();
+app.MapInventoryEndpoints();
 app.MapUserEndpoints();
 
 // The build also starts this app to write the OpenAPI file; it must not touch the database then.

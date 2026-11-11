@@ -664,6 +664,128 @@
         }
       }
     },
+    "/api/inventory": {
+      "get": {
+        "tags": [
+          "Inventory"
+        ],
+        "parameters": [
+          {
+            "name": "includeInactive",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InventoryItemDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Inventory"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveInventoryItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryItemDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/inventory/{id}": {
+      "put": {
+        "tags": [
+          "Inventory"
+        ],
+        "summary": "Updates an item. Retire items with isActive=false instead of deleting so past bookings keep their history.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveInventoryItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryItemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/users": {
       "get": {
         "tags": [
@@ -1176,6 +1298,95 @@
           }
         }
       },
+      "InventoryCategory": {
+        "enum": [
+          "BounceHouse",
+          "Combo",
+          "WaterSlide",
+          "ObstacleCourse",
+          "SlipNSlide",
+          "Game",
+          "Equipment",
+          "Other"
+        ]
+      },
+      "InventoryItemDto": {
+        "required": [
+          "id",
+          "name",
+          "category",
+          "isUnit",
+          "quantity",
+          "waterUse",
+          "needsPower",
+          "lengthFt",
+          "widthFt",
+          "heightFt",
+          "dailyPrice",
+          "notes",
+          "isActive"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/InventoryCategory"
+          },
+          "isUnit": {
+            "type": "boolean"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "waterUse": {
+            "$ref": "#/components/schemas/WaterUse"
+          },
+          "needsPower": {
+            "type": "boolean"
+          },
+          "lengthFt": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "widthFt": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "heightFt": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "dailyPrice": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
       "JobCardDto": {
         "required": [
           "jobId",
@@ -1477,6 +1688,93 @@
           }
         }
       },
+      "SaveInventoryItemRequest": {
+        "required": [
+          "name",
+          "category",
+          "isUnit",
+          "quantity",
+          "waterUse",
+          "needsPower",
+          "lengthFt",
+          "widthFt",
+          "heightFt",
+          "dailyPrice",
+          "notes"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 80,
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/InventoryCategory"
+          },
+          "isUnit": {
+            "type": "boolean"
+          },
+          "quantity": {
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "waterUse": {
+            "$ref": "#/components/schemas/WaterUse"
+          },
+          "needsPower": {
+            "type": "boolean"
+          },
+          "lengthFt": {
+            "maximum": 500,
+            "minimum": 1,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "widthFt": {
+            "maximum": 500,
+            "minimum": 1,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "heightFt": {
+            "maximum": 100,
+            "minimum": 1,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "dailyPrice": {
+            "maximum": 100000,
+            "minimum": 0,
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "notes": {
+            "maxLength": 500,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
       "SaveJobScheduleRequest": {
         "required": [
           "scheduledAt",
@@ -1627,6 +1925,14 @@
           "Office",
           "Crew"
         ]
+      },
+      "WaterUse": {
+        "enum": [
+          "None",
+          "DryOnly",
+          "WetOnly",
+          "WetOrDry"
+        ]
       }
     }
   },
@@ -1642,6 +1948,9 @@
     },
     {
       "name": "Bookings"
+    },
+    {
+      "name": "Inventory"
     },
     {
       "name": "Users"

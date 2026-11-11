@@ -16,6 +16,8 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 
 	public DbSet<JobAssignment> JobAssignments => Set<JobAssignment>();
 
+	public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
+
 	protected override void OnModelCreating(ModelBuilder model)
 	{
 		base.OnModelCreating(model);
@@ -45,6 +47,17 @@ public sealed class BounceRouteDbContext(DbContextOptions<BounceRouteDbContext> 
 		});
 
 		model.Entity<BookingItem>(item => item.Property(i => i.Name).HasMaxLength(80));
+
+		model.Entity<InventoryItem>(item =>
+		{
+			item.HasIndex(i => i.Name).IsUnique();
+			item.Property(i => i.Name).HasMaxLength(80);
+			item.Property(i => i.Notes).HasMaxLength(500);
+			item.Property(i => i.Category).HasConversion<string>().HasMaxLength(20);
+			item.Property(i => i.WaterUse).HasConversion<string>().HasMaxLength(10);
+			item.Property(i => i.DailyPrice).HasPrecision(8, 2);
+			item.ToTable(table => table.HasCheckConstraint("CK_InventoryItems_Quantity", "\"Quantity\" >= 1"));
+		});
 
 		model.Entity<CrewMember>(crew =>
 		{

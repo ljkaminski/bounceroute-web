@@ -19,3 +19,24 @@ public enum JobStatus
 	Upcoming,
 	Done
 }
+
+public enum InventoryCategory
+{
+	BounceHouse,
+	Combo,
+	WaterSlide,
+	ObstacleCourse,
+	SlipNSlide,
+	Game,
+	Equipment,
+	Other
+}
+
+public enum WaterUse
+{
+	// Not an inflatable (generators, games).
+	None,
+	DryOnly,
+	WetOnly,
+	WetOrDry
+}

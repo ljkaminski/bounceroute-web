@@ -743,6 +743,133 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    includeInactive?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InventoryItemDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveInventoryItemRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InventoryItemDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/inventory/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Updates an item. Retire items with isActive=false instead of deleting so past bookings keep their history. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveInventoryItemRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InventoryItemDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users": {
         parameters: {
             query?: never;
@@ -1028,6 +1155,29 @@ export interface components {
                 [key: string]: string[];
             };
         };
+        /** @enum {unknown} */
+        InventoryCategory: "BounceHouse" | "Combo" | "WaterSlide" | "ObstacleCourse" | "SlipNSlide" | "Game" | "Equipment" | "Other";
+        InventoryItemDto: {
+            /** Format: int32 */
+            id: number;
+            name: string;
+            category: components["schemas"]["InventoryCategory"];
+            isUnit: boolean;
+            /** Format: int32 */
+            quantity: number;
+            waterUse: components["schemas"]["WaterUse"];
+            needsPower: boolean;
+            /** Format: int32 */
+            lengthFt: null | number;
+            /** Format: int32 */
+            widthFt: null | number;
+            /** Format: int32 */
+            heightFt: null | number;
+            /** Format: double */
+            dailyPrice: null | number;
+            notes: string;
+            isActive: boolean;
+        };
         JobCardDto: {
             /** Format: int32 */
             jobId: number;
@@ -1101,6 +1251,26 @@ export interface components {
             /** @default true */
             isActive: boolean;
         };
+        SaveInventoryItemRequest: {
+            name: string;
+            category: components["schemas"]["InventoryCategory"];
+            isUnit: boolean;
+            /** Format: int32 */
+            quantity: number;
+            waterUse: components["schemas"]["WaterUse"];
+            needsPower: boolean;
+            /** Format: int32 */
+            lengthFt: null | number;
+            /** Format: int32 */
+            widthFt: null | number;
+            /** Format: int32 */
+            heightFt: null | number;
+            /** Format: double */
+            dailyPrice: null | number;
+            notes: null | string;
+            /** @default true */
+            isActive: boolean;
+        };
         SaveJobScheduleRequest: {
             /** Format: date-time */
             scheduledAt: string;
@@ -1138,6 +1308,8 @@ export interface components {
         };
         /** @enum {unknown} */
         UserRole: "Owner" | "Office" | "Crew";
+        /** @enum {unknown} */
+        WaterUse: "None" | "DryOnly" | "WetOnly" | "WetOrDry";
     };
     responses: never;
     parameters: never;
