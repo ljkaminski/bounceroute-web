@@ -20,7 +20,7 @@ const job: JobCard = {
   cityStateZip: 'Greenville, NC 27858',
   surface: 'Grass',
   siteNotes: '',
-  units: [{ id: 1, name: 'Castle Combo', isUnit: true, isLoaded: false, inventoryItemId: null, isWet: null }],
+  units: [{ id: 1, name: 'Castle Combo', isUnit: true, isLoaded: false, inventoryItemId: 4, isWet: true }],
   extras: [{ id: 2, name: 'Generator', isUnit: false, isLoaded: false, inventoryItemId: null, isWet: null }],
   crew: [{ id: 1, name: 'Jordan Hale', initials: 'JH' }],
 }
@@ -32,5 +32,6 @@ it('shows the stop the way crews read it', () => {
   expect(screen.getByText('AM')).toBeInTheDocument()
   expect(screen.getByText('NEXT UP')).toBeInTheDocument()
   expect(screen.getByText(/Grass · 1 unit \+ 1 extra · Truck 2/)).toBeInTheDocument()
+  expect(screen.getByText(/· Wet/)).toBeInTheDocument()
   expect(screen.getByRole('link')).toHaveAttribute('href', '/jobs/7')
 })

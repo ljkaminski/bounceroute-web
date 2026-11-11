@@ -5,6 +5,7 @@ import { CrewChips, StatusBadge, TypeBadge } from './Badges'
 
 export function JobCardRow({ job }: { job: JobCard }) {
   const units = job.units.length
+  const wet = job.units.some((unit) => unit.isWet)
   return (
     <Link
       to={`/jobs/${job.jobId}`}
@@ -26,6 +27,7 @@ export function JobCardRow({ job }: { job: JobCard }) {
           {job.surface} · {units} {units === 1 ? 'unit' : 'units'}
           {job.extras.length > 0 && ` + ${job.extras.length} extra${job.extras.length === 1 ? '' : 's'}`}
           {job.truck && ` · ${job.truck}`}
+          {wet && <span className="font-semibold text-sky-700"> · Wet</span>}
         </div>
       </div>
       <div className="hidden shrink-0 self-center sm:block">

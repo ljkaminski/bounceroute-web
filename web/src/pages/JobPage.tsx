@@ -61,6 +61,13 @@ function JobDetail({ job }: { job: JobCard }) {
           )}
         </div>
 
+        {job.units.some((unit) => unit.isWet) && (
+          <p className="mt-4 rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-900 ring-1 ring-sky-200">
+            <span className="font-semibold">Wet setup: </span>
+            bring hoses and find the water hookup.
+          </p>
+        )}
+
         {job.siteNotes && (
           <p className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-200">
             <span className="font-semibold">Site notes: </span>
@@ -110,6 +117,8 @@ function LoadList({ title, items }: { title: string; items: JobCard['units'] }) 
                 onChange={(event) => setLoaded.mutate({ itemId: item.id, isLoaded: event.target.checked })}
               />
               <span className={item.isLoaded ? 'text-slate-400 line-through' : ''}>{item.name}</span>
+              {item.isWet === true && <span className="rounded bg-sky-100 px-1.5 text-xs font-semibold text-sky-800">Wet</span>}
+              {item.isWet === false && <span className="rounded bg-slate-100 px-1.5 text-xs font-semibold text-slate-600">Dry</span>}
             </label>
           </li>
         ))}
