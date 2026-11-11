@@ -9,9 +9,14 @@ export type SaveBookingRequest = Schemas['SaveBookingRequest']
 export type CrewMember = Schemas['CrewMemberDto']
 export type UnitTotalsReport = Schemas['UnitTotalsReport']
 export type Surface = Schemas['Surface']
+export type CurrentUser = Schemas['CurrentUserDto']
 
 // Empty in development (Vite proxies /api); set VITE_API_URL when the API lives elsewhere.
-export const api = createClient<paths>({ baseUrl: import.meta.env.VITE_API_URL ?? '' })
+// fetch is looked up per request (not captured once) so tests can stub it.
+export const api = createClient<paths>({
+  baseUrl: import.meta.env.VITE_API_URL ?? '',
+  fetch: (request) => globalThis.fetch(request),
+})
 
 // Carries the API's field errors (from a 400 validation problem) so forms can show them by field.
 export class ApiError extends Error {
@@ -19,8 +24,8 @@ export class ApiError extends Error {
   readonly fieldErrors: Record<string, string[]>
 
   constructor(status: number, body: unknown) {
-    const problem = (body ?? {}) as { title?: string; errors?: Record<string, string[]> }
-    super(problem.title ?? `Request failed (${status})`)
+    const problem = (body ?? {}) as { title?: string; detail?: string; errors?: Record<string, string[]> }
+    super(problem.detail ?? problem.title ?? `Request failed (${status})`)
     this.status = status
     this.fieldErrors = problem.errors ?? {}
   }

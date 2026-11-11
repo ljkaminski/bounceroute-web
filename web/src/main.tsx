@@ -1,29 +1,51 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router'
+import { ApiError } from './api/client'
+import { RequireAuth } from './auth/RequireAuth'
+import { meKey } from './auth/useAuth'
 import { Layout } from './components/Layout'
 import './index.css'
 import { BookingFormPage } from './pages/BookingFormPage'
 import { BookingsPage } from './pages/BookingsPage'
 import { CrewPage } from './pages/CrewPage'
 import { JobPage } from './pages/JobPage'
+import { LoginPage } from './pages/LoginPage'
 import { RoutePage } from './pages/RoutePage'
 
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 15_000, retry: 1 } },
+// When the session runs out mid-use, any 401 sends the app back to the sign-in page.
+const signOutOn401 = (error: Error) => {
+  if (error instanceof ApiError && error.status === 401) queryClient.setQueryData(meKey, null)
+}
+
+const queryClient: QueryClient = new QueryClient({
+  queryCache: new QueryCache({ onError: signOutOn401 }),
+  mutationCache: new MutationCache({ onError: signOutOn401 }),
+  defaultOptions: {
+    queries: {
+      staleTime: 15_000,
+      retry: (count, error) => !(error instanceof ApiError && error.status < 500) && count < 1,
+    },
+  },
 })
 
 const router = createBrowserRouter([
+  { path: 'login', element: <LoginPage /> },
   {
-    element: <Layout />,
+    element: <RequireAuth />,
     children: [
-      { index: true, element: <RoutePage /> },
-      { path: 'jobs/:id', element: <JobPage /> },
-      { path: 'bookings', element: <BookingsPage /> },
-      { path: 'bookings/new', element: <BookingFormPage /> },
-      { path: 'bookings/:id/edit', element: <BookingFormPage /> },
-      { path: 'crew', element: <CrewPage /> },
+      {
+        element: <Layout />,
+        children: [
+          { index: true, element: <RoutePage /> },
+          { path: 'jobs/:id', element: <JobPage /> },
+          { path: 'bookings', element: <BookingsPage /> },
+          { path: 'bookings/new', element: <BookingFormPage /> },
+          { path: 'bookings/:id/edit', element: <BookingFormPage /> },
+          { path: 'crew', element: <CrewPage /> },
+        ],
+      },
     ],
   },
 ])

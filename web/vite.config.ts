@@ -13,6 +13,6 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     // Pin the zone so date tests mean the same thing on every machine and in CI.
-    env: { TZ: 'America/New_York' },
+    env: { TZ: 'America/New_York', VITE_API_URL: 'http://localhost' },
   },
 })

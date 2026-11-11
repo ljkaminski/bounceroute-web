@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router'
+import { useCurrentUser, useLogout } from '../auth/useAuth'
 
 const links = [
   { to: '/', label: 'Route', end: true },
@@ -7,6 +8,9 @@ const links = [
 ]
 
 export function Layout() {
+  const me = useCurrentUser().data
+  const logout = useLogout()
+
   return (
     <div className="min-h-dvh">
       <header className="bg-navy text-white">
@@ -31,6 +35,12 @@ export function Layout() {
               </NavLink>
             ))}
           </nav>
+          <div className="ml-auto flex items-center gap-3 text-sm">
+            <span className="text-slate-300">{me?.displayName}</span>
+            <button className="text-slate-400 hover:text-white" onClick={() => logout.mutate()} disabled={logout.isPending}>
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 py-6">
